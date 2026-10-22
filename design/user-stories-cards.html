@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ponte — User Stories</title>
+<style>
+  :root {
+    color-scheme: light;
+    --navy:   #1A1F3C;
+    --white:  #FFFFFF;
+    --gray50: #F7F8FA;
+    --gray200:#E2E6ED;
+    --gray500:#7A8699;
+    --gray700:#4A5568;
+    --gray800:#2C3340;
+
+    --c1: #3ABFB0; /* stretch */
+    --c2: #E8623A; /* campanhas backend */
+    --c3: #5B8DEF; /* campanhas front */
+    --c4: #F5A623; /* telefonia */
+    --c5: #8B6FE8; /* histórico */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--gray50);
+    padding: 48px 40px;
+    color: var(--gray800);
+  }
+
+  /* header */
+  .page-header {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 48px;
+  }
+  .logo-mark {
+    width: 40px; height: 40px;
+    background: var(--navy); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-mark svg { width: 24px; height: 24px; }
+  .page-title { font-size: 22px; font-weight: 700; color: var(--navy); letter-spacing: -0.4px; }
+  .page-sub   { font-size: 13px; color: var(--gray500); margin-top: 2px; }
+
+  /* epic */
+  .epic { margin-bottom: 44px; }
+
+  .epic-header {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .epic-pill {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--white); background: var(--ec);
+    padding: 3px 9px; border-radius: 4px;
+    white-space: nowrap;
+  }
+  .epic-pill.stretch-style {
+    background: none;
+    border: 1.5px solid var(--ec);
+    color: var(--ec);
+  }
+  .epic-title {
+    font-size: 16px; font-weight: 700; color: var(--navy); letter-spacing: -0.3px;
+  }
+  .stretch-badge {
+    font-size: 10px; font-weight: 600;
+    color: var(--c1);
+    background: color-mix(in srgb, var(--c1) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c1) 25%, transparent);
+    padding: 2px 7px; border-radius: 4px;
+    margin-left: 4px;
+  }
+
+  /* grid */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 16px;
+  }
+
+  /* card */
+  .card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1.5px solid var(--gray200);
+    padding: 20px 22px 20px;
+    display: flex; flex-direction: column; gap: 13px;
+  }
+  .card.stretch { border-style: dashed; }
+
+  .card-top {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 10px;
+  }
+  .card-id {
+    font-size: 11px; font-weight: 700;
+    color: var(--ec);
+    background: color-mix(in srgb, var(--ec) 10%, transparent);
+    padding: 3px 8px; border-radius: 4px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .card-layer {
+    font-size: 10px; color: var(--gray500);
+    text-align: right; line-height: 1.4;
+  }
+
+  .card-title {
+    font-size: 14px; font-weight: 700;
+    color: var(--navy); line-height: 1.35; letter-spacing: -0.2px;
+  }
+
+  /* goal block */
+  .goal-block {
+    background: color-mix(in srgb, var(--ec) 6%, transparent);
+    border-left: 3px solid var(--ec);
+    border-radius: 0 6px 6px 0;
+    padding: 9px 12px;
+  }
+  .goal-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase;
+    color: var(--ec); margin-bottom: 4px;
+  }
+  .goal-text { font-size: 12px; color: var(--gray700); line-height: 1.5; }
+
+  /* story */
+  .story-block {
+    background: var(--gray50);
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .story-line { font-size: 12px; color: var(--gray800); line-height: 1.5; }
+  .story-line strong { font-weight: 600; color: var(--navy); }
+
+  /* scope */
+  .scope-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .scope-block { display: flex; flex-direction: column; gap: 5px; }
+  .scope-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--gray500);
+  }
+  .scope-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .scope-list.in  li::before { background: var(--ec); }
+  .scope-list.out li::before { background: #CBD5E0; }
+  .scope-list li {
+    font-size: 11px; color: var(--gray700); line-height: 1.4;
+    padding-left: 13px; position: relative;
+  }
+  .scope-list li::before {
+    content: ''; position: absolute; left: 0; top: 6px;
+    width: 5px; height: 5px; border-radius: 50%;
+  }
+
+  /* criteria */
+  .criteria-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--gray500);
+  }
+  .criteria-list { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-top: 3px; }
+  .criteria-list li {
+    font-size: 11px; color: var(--gray700); line-height: 1.5;
+    padding-left: 13px; position: relative;
+  }
+  .criteria-list li::before {
+    content: ''; position: absolute; left: 0; top: 6px;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--ec); opacity: 0.7;
+  }
+
+  /* epic color vars per section */
+  .e1 { --ec: var(--c1); }
+  .e2 { --ec: var(--c2); }
+  .e3 { --ec: var(--c3); }
+  .e4 { --ec: var(--c4); }
+  .e5 { --ec: var(--c5); }
+
+  /* sprint plan */
+  .plan {
+    margin-top: 48px;
+    border-top: 2px solid var(--gray200);
+    padding-top: 36px;
+  }
+  .plan-title {
+    font-size: 17px; font-weight: 700; color: var(--navy);
+    letter-spacing: -0.3px; margin-bottom: 6px;
+  }
+  .plan-sub {
+    font-size: 13px; color: var(--gray500); margin-bottom: 24px;
+  }
+  .weeks {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .week {
+    background: var(--white);
+    border: 1.5px solid var(--gray200);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .week-header {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .week-num {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--white); background: var(--navy);
+    padding: 3px 8px; border-radius: 4px;
+  }
+  .week-label {
+    font-size: 13px; font-weight: 700; color: var(--navy);
+  }
+  .week-focus {
+    font-size: 12px; color: var(--gray500); line-height: 1.5;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--gray200);
+  }
+  .person {
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .person-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--gray500);
+  }
+  .us-tags {
+    display: flex; flex-wrap: wrap; gap: 5px;
+  }
+  .us-tag {
+    font-size: 11px; font-weight: 600;
+    padding: 2px 7px; border-radius: 4px;
+    color: var(--white);
+  }
+  .us-tag.e1 { background: var(--c1); }
+  .us-tag.e2 { background: var(--c2); }
+  .us-tag.e3 { background: var(--c3); }
+  .us-tag.e4 { background: var(--c4); }
+  .us-tag.e5 { background: var(--c5); }
+  .us-tag.stretch {
+    background: none;
+    border: 1.5px solid var(--c1);
+    color: var(--c1);
+  }
+  .week-risk {
+    font-size: 11px; color: #C05621;
+    background: #FFF8F0;
+    border: 1px solid #FBD38D;
+    border-radius: 6px;
+    padding: 7px 10px;
+    line-height: 1.5;
+  }
+  .week-risk strong { color: #C05621; }
+
+  .hint {
+    margin-top: 24px; padding: 14px 18px;
+    background: color-mix(in srgb, var(--navy) 5%, transparent);
+    border-radius: 8px; font-size: 12px; color: var(--gray500); line-height: 1.6;
+  }
+  .hint strong { color: var(--navy); }
+
+  @media print { body { padding: 24px; background: white; } .hint { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M4 18 C4 12 12 6 20 6" stroke="#E8623A" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M4 18 C4 14 12 10 20 10" stroke="#3ABFB0" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M4 18 C4 16 12 14 20 14" stroke="#F5C842" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div>
+    <div class="page-title">Ponte — User Stories</div>
+    <div class="page-sub">Perspectiva dev · IBM watsonx · RAG · Telefonia · 12 histórias · 5 épicos</div>
+  </div>
+</div>
+
+
+<!-- ═══ ÉPICO 1 — stretch ═══ -->
+<section class="epic e1">
+  <div class="epic-header">
+    <span class="epic-pill stretch-style">Épico 1</span>
+    <span class="epic-title">Pipeline de dados e score de regiões <span class="stretch-badge">stretch</span></span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="card stretch">
+      <div class="card-top">
+        <span class="card-id">US-01</span>
+        <span class="card-layer">Backend · Scripts de dados<br><em>stretch</em></span>
+      </div>
+      <div class="card-title">Coleta e normalização dos datasets públicos</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Ter um dataset limpo por município que sirva de input para o agente de score. Sem isso o US-02 não tem o que processar.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> escrever scripts que coletam e normalizam datasets públicos (IDEB, censo escolar, cobertura de telefonia),</div>
+        <div class="story-line"><strong>para que</strong> tenhamos um arquivo estruturado por município pronto para o agente de scoring.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Scripts de coleta das fontes públicas</li>
+            <li>Normalização: um registro por município, nulos explícitos</li>
+            <li>Output: CSV/JSON com código IBGE, UF, IDEB, renda, % cobertura</li>
+            <li><code>fontes.md</code> com URL e licença de cada fonte</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Nenhuma UI</li>
+            <li>Nenhuma lógica de score</li>
+            <li>Dados pessoais ou de clientes</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Script roda do zero e produz o arquivo sem erros</li>
+        <li>Todos os municípios têm os campos mínimos ou nulo explícito</li>
+        <li><code>fontes.md</code> lista todas as origens com URL e licença confirmada</li>
+      </ul>
+    </div>
+
+    <div class="card stretch">
+      <div class="card-top">
+        <span class="card-id">US-02</span>
+        <span class="card-layer">IBM watsonx — agente<br><em>stretch</em></span>
+      </div>
+      <div class="card-title">Configuração do agente de score no watsonx</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Ter um agente no watsonx que receba dados de um município e devolva score + explicação. É a inteligência do dashboard — sem ele o US-03-back não tem o que rodar.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> configurar e testar um agente no IBM watsonx que receba os campos de um município e retorne score, nível e justificativa,</div>
+        <div class="story-line"><strong>para que</strong> o batch e o dashboard consumam essa saída sem lógica de negócio no front.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Agente no watsonx com prompt estruturado</li>
+            <li>Pesos das variáveis configuráveis no prompt</li>
+            <li>Testes manuais com amostras do US-01</li>
+            <li>Contrato: input município → output <code>{ score, nivel, fatores[3] }</code></li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Processamento em batch (US-03-back)</li>
+            <li>Nenhuma UI</li>
+            <li>Nenhuma persistência</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Retorna schema válido para qualquer município do dataset</li>
+        <li>Alterar pesos no prompt muda o score sem redeploy</li>
+        <li>Contrato documentado com exemplos de input/output</li>
+      </ul>
+    </div>
+
+    <div class="card stretch">
+      <div class="card-top">
+        <span class="card-id">US-03-back</span>
+        <span class="card-layer">Backend<br><em>stretch</em></span>
+      </div>
+      <div class="card-title">Job de batch: rodar scoring e persistir resultados</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Processar o dataset completo pelo agente do US-02 e salvar os scores no banco, para que o front consulte resultados sem chamar o watsonx a cada request.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> implementar um job que percorre o dataset, chama o agente do US-02 por município e persiste os resultados no banco,</div>
+        <div class="story-line"><strong>para que</strong> o dashboard acesse scores pré-calculados via API sem latência de inferência.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Job que itera municípios e chama o agente do US-02</li>
+            <li>Persistência: código IBGE, score, nível, fatores, timestamp</li>
+            <li>Endpoint <code>GET /municipios</code> com filtros por UF e nível</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Nenhuma UI</li>
+            <li>Lógica de scoring (agente do US-02 faz isso)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Job processa o dataset completo sem falhas</li>
+        <li><code>GET /municipios</code> retorna dados com filtros funcionando</li>
+        <li>Re-rodar o job atualiza registros sem duplicar</li>
+      </ul>
+    </div>
+
+    <div class="card stretch">
+      <div class="card-top">
+        <span class="card-id">US-03-front</span>
+        <span class="card-layer">Frontend<br><em>stretch</em></span>
+      </div>
+      <div class="card-title">Tela do dashboard com mapa de sensibilidade</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Dar uma interface visual para os dados de score. É a entrega visível do Épico 1 e o que aparece na demo.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> construir a tela do mapa com municípios coloridos por nível de sensibilidade,</div>
+        <div class="story-line"><strong>para que</strong> a visualização de regiões prioritárias esteja pronta para a demo.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Mapa interativo consumindo <code>GET /municipios</code></li>
+            <li>Filtros: UF, faixa de score, cobertura de rede</li>
+            <li>Clique no município → painel com os 3 fatores do score</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Nenhuma lógica de backend</li>
+            <li>Autenticação ou controle de acesso</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Mapa carrega e renderiza todos os municípios sem erro</li>
+        <li>Filtros atualizam o mapa em tempo real</li>
+        <li>Painel lateral exibe fatores corretamente para qualquer município</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ═══ ÉPICO 2 — Campanhas Backend ═══ -->
+<section class="epic e2">
+  <div class="epic-header">
+    <span class="epic-pill">Épico 2</span>
+    <span class="epic-title">Campanhas — Backend</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="card">
+      <div class="card-top">
+        <span class="card-id">US-04</span>
+        <span class="card-layer">Backend · API</span>
+      </div>
+      <div class="card-title">Modelagem e API CRUD de campanhas</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Ter a API que o front (US-06) e o pipeline de RAG (US-05) vão consumir. É a fundação do Épico 2 — todas as outras US de campanha dependem dela.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> implementar os endpoints de CRUD de campanhas e de upload/remoção de documentos,</div>
+        <div class="story-line"><strong>para que</strong> o front de gestão e o pipeline de RAG tenham uma API estável.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Tabelas: <code>campanhas</code> e <code>documentos</code></li>
+            <li><code>POST/GET/PATCH/DELETE /campanhas</code></li>
+            <li><code>POST/DELETE /campanhas/:id/documentos</code></li>
+            <li>Validação: apenas PDF e TXT; tamanho máximo configurável</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Lógica de RAG ou indexação (US-05)</li>
+            <li>Nenhuma UI</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Endpoints respondem corretamente para casos feliz e de erro (404, 422)</li>
+        <li>Desativar campanha seta <code>status = inativa</code> e bloqueia invocação via telefonia</li>
+        <li>Arquivo salvo no storage com caminho persistido no banco</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="card-id">US-05</span>
+        <span class="card-layer">IBM watsonx + Backend · Worker</span>
+      </div>
+      <div class="card-title">Pipeline de indexação RAG por campanha no watsonx</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Transformar os documentos de uma campanha em um índice RAG isolado no watsonx, para que o agente de voz faça retrieval apenas do conteúdo daquela campanha.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> implementar o pipeline de chunking, embedding e indexação no watsonx por campanha,</div>
+        <div class="story-line"><strong>para que</strong> o agente daquela campanha responda apenas com o conteúdo correto.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Trigger: upload no US-04 enfileira o documento</li>
+            <li>Chunking com tamanho e overlap configuráveis</li>
+            <li>Embeddings + indexação no watsonx com metadado <code>campanha_id</code></li>
+            <li>Status: <code>processando</code> → <code>pronto</code> | <code>erro</code></li>
+            <li>Remoção de documento remove seus chunks do índice</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Nenhuma UI</li>
+            <li>Lógica de resposta do agente (US-08-agent)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Upload dispara o pipeline e status atualiza até <code>pronto</code> ou <code>erro</code></li>
+        <li>Busca no índice de uma campanha não retorna chunks de outra</li>
+        <li>Remover documento remove exatamente seus chunks, sem afetar os demais</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ═══ ÉPICO 3 — Campanhas Frontend ═══ -->
+<section class="epic e3">
+  <div class="epic-header">
+    <span class="epic-pill">Épico 3</span>
+    <span class="epic-title">Campanhas — Frontend</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="card">
+      <div class="card-top">
+        <span class="card-id">US-06</span>
+        <span class="card-layer">Frontend</span>
+      </div>
+      <div class="card-title">Interface de gestão de campanhas</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Tornar o fluxo de criar campanha, subir documentos e acompanhar indexação demonstrável sem tocar na API diretamente.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> construir a tela de gestão de campanhas com criação, upload e controle de status,</div>
+        <div class="story-line"><strong>para que</strong> o fluxo completo de configuração do agente seja demonstrável na apresentação.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Lista de campanhas com status e toggle ativo/inativo</li>
+            <li>Formulário de criação</li>
+            <li>Upload via drag and drop (consome US-04)</li>
+            <li>Indicador de status de indexação por documento (polling ou websocket)</li>
+            <li>Remoção de documento com confirmação</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Nenhuma lógica de backend ou RAG</li>
+            <li>Autenticação ou controle de acesso por perfil</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Criar campanha e upload de documento funciona de ponta a ponta na demo</li>
+        <li>Status de indexação atualiza sem recarregar a página</li>
+        <li>Toggle ativo/inativo reflete imediatamente na API (US-04)</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ═══ ÉPICO 4 — Telefonia ═══ -->
+<section class="epic e4">
+  <div class="epic-header">
+    <span class="epic-pill">Épico 4</span>
+    <span class="epic-title">Telefonia</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="card">
+      <div class="card-top">
+        <span class="card-id">US-07</span>
+        <span class="card-layer">Telefonia · URA · Provedor</span>
+      </div>
+      <div class="card-title">Configuração do fluxo de chamada e URA</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Ter o número 0800 recebendo chamadas e a URA roteando para a campanha certa antes de qualquer lógica de agente entrar.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> configurar o fluxo de chamada no provedor com URA que lista campanhas ativas e roteia para o handler correto,</div>
+        <div class="story-line"><strong>para que</strong> a ligação chegue ao agente da campanha antes de qualquer AI ser acionada.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Configuração do número no provedor (Twilio ou equivalente)</li>
+            <li>URA que busca campanhas ativas via <code>GET /campanhas</code></li>
+            <li>Roteamento: seleção do aluno determina a campanha do handler</li>
+            <li>Fallback: sem campanha ativa → mensagem + encerra</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Nenhuma lógica de STT, AI ou TTS (US-08-handler)</li>
+            <li>Nenhuma UI de configuração</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Chamada recebida chega na URA sem erro</li>
+        <li>URA apresenta corretamente as campanhas ativas no momento da ligação</li>
+        <li>Fallback reproduz mensagem e encerra sem travar</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="card-id">US-08-agent</span>
+        <span class="card-layer">IBM watsonx — agente</span>
+      </div>
+      <div class="card-title">Configuração do agente educacional no watsonx</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Ter o agente educacional configurado no watsonx com RAG, pronto para receber uma pergunta em texto e devolver resposta + score de confiança. O handler (US-08-handler) só chama — não configura.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> configurar o agente educacional no watsonx com system prompt e RAG apontando para o índice da campanha,</div>
+        <div class="story-line"><strong>para que</strong> o handler invoque esse agente passando apenas a pergunta e o ID da campanha.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Agente com system prompt educacional (linguagem acessível, EF/EM)</li>
+            <li>RAG configurado: busca no índice da campanha recebida como parâmetro</li>
+            <li>Comportamento de baixa confiança: retorna <code>sem_resposta: true</code></li>
+            <li>Testes manuais com perguntas de múltiplas matérias</li>
+            <li>Contrato: <code>{ pergunta, campanha_id }</code> → <code>{ resposta, confianca, sem_resposta }</code></li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>STT ou TTS (US-08-handler)</li>
+            <li>Persistência de histórico (US-09)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Resposta coerente para perguntas dentro do conteúdo indexado</li>
+        <li><code>sem_resposta: true</code> para perguntas fora do escopo, sem alucinar</li>
+        <li>Contrato documentado e testado com amostras reais</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="card-id">US-08-handler</span>
+        <span class="card-layer">Backend · Webhook</span>
+      </div>
+      <div class="card-title">Handler de voz: STT → agente → TTS</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Fechar o ciclo da chamada: receber o áudio, transcrever, consultar o agente do US-08-agent, converter em fala e devolver ao aluno. É o único componente que orquestra os outros dois.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> implementar o handler que orquestra STT → chamada ao agente watsonx → TTS em resposta a cada turno da ligação,</div>
+        <div class="story-line"><strong>para que</strong> o ciclo de pergunta/resposta funcione dentro de uma ligação de voz comum.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Receber áudio do aluno via webhook do provedor</li>
+            <li>STT: transcrição do áudio para texto</li>
+            <li>Chamada ao agente do US-08-agent com <code>{ pergunta, campanha_id }</code></li>
+            <li>TTS: resposta em áudio enviada ao provedor</li>
+            <li><code>sem_resposta: true</code> → TTS de fallback orientando buscar o professor</li>
+            <li>Disparo de <code>POST /interacoes</code> ao final de cada turno (US-09)</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Lógica de AI ou RAG (US-08-agent faz isso)</li>
+            <li>Persistência direta (delega ao US-09)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Pergunta na ligação gera resposta em áudio em latência aceitável</li>
+        <li><code>sem_resposta: true</code> resulta no áudio de fallback correto</li>
+        <li>Interação registrada via US-09 ao final de cada turno</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ═══ ÉPICO 5 — Histórico ═══ -->
+<section class="epic e5">
+  <div class="epic-header">
+    <span class="epic-pill">Épico 5</span>
+    <span class="epic-title">Histórico</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="card">
+      <div class="card-top">
+        <span class="card-id">US-09</span>
+        <span class="card-layer">Backend · Banco de dados</span>
+      </div>
+      <div class="card-title">Persistência anônima das interações</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Salvar cada turno de conversa de forma anônima, para que os dados de uso fiquem disponíveis para análise sem nenhum dado pessoal do aluno.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> implementar o endpoint e a modelagem que registram cada interação de forma anônima,</div>
+        <div class="story-line"><strong>para que</strong> o histórico de uso fique disponível para análise sem armazenar dados pessoais.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Tabela <code>interacoes</code>: campanha_id, pergunta, resposta, confianca, sem_resposta, timestamp</li>
+            <li>Endpoint <code>POST /interacoes</code> invocado pelo US-08-handler</li>
+            <li>Validação: rejeitar payload com telefone, nome ou CPF</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Nenhuma UI</li>
+            <li>Nenhuma lógica de agregação (US-10)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Handler do US-08 registra interação via <code>POST /interacoes</code></li>
+        <li>Tabela não contém campo de identificação pessoal</li>
+        <li>Payload com PI retorna erro 422</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="card-id">US-10</span>
+        <span class="card-layer">Backend + Frontend · Analytics</span>
+      </div>
+      <div class="card-title">Endpoints de analytics e tela de métricas</div>
+      <div class="goal-block">
+        <div class="goal-label">Goal</div>
+        <div class="goal-text">Expor as métricas de uso do agente (dúvidas frequentes, taxa de sem_resposta) para que a demo mostre o ciclo completo de melhoria contínua.</div>
+      </div>
+      <div class="story-block">
+        <div class="story-line"><strong>Como</strong> dev do time Ponte,</div>
+        <div class="story-line"><strong>quero</strong> implementar os endpoints de agregação do histórico e a tela que exibe essas métricas,</div>
+        <div class="story-line"><strong>para que</strong> a demo mostre análise e melhoria do agente com dados reais de uso.</div>
+      </div>
+      <div class="scope-row">
+        <div class="scope-block">
+          <div class="scope-label">Entra</div>
+          <ul class="scope-list in">
+            <li>Endpoint <code>GET /analytics/campanhas/:id</code>: top perguntas, % sem_resposta, volume por dia</li>
+            <li>Dados sempre agregados — sem registros individuais</li>
+            <li>Tela de métricas por campanha consumindo esse endpoint</li>
+          </ul>
+        </div>
+        <div class="scope-block">
+          <div class="scope-label">Não entra</div>
+          <ul class="scope-list out">
+            <li>Retreino automático de modelo</li>
+            <li>Dados de municípios/regiões (Épico 1 — stretch)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="criteria-label">Critérios de aceite</div>
+      <ul class="criteria-list">
+        <li>Endpoint retorna métricas corretas com base nas interações do US-09</li>
+        <li>Tela exibe dados sem expor registros individuais</li>
+        <li>Funciona na demo com dados reais ou de seed</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ═══ PLANO DE 3 SEMANAS ═══ -->
+<div class="plan">
+  <div class="plan-title">Plano de 3 semanas — 3 pessoas</div>
+  <div class="plan-sub">Agrupamento recomendado de USs por pessoa e por semana</div>
+
+  <div class="weeks">
+
+    <!-- Semana 1 -->
+    <div class="week">
+      <div class="week-header">
+        <span class="week-num">Semana 1</span>
+        <span class="week-label">Fundação + spike de risco</span>
+      </div>
+      <div class="week-focus">Dia 1: os três juntos fazem o spike de telefonia — Twilio recebendo chamada, STT → texto → TTS com resposta hardcoded. Sem watsonx ainda. Só pra confirmar que a latência é aceitável antes de qualquer outra coisa.</div>
+
+      <div class="person">
+        <div class="person-label">Pessoa A · Backend</div>
+        <div class="us-tags">
+          <span class="us-tag e2">US-04</span>
+          <span class="us-tag e2">US-05</span>
+        </div>
+      </div>
+
+      <div class="person">
+        <div class="person-label">Pessoa B · Telefonia</div>
+        <div class="us-tags">
+          <span class="us-tag e4">US-07</span>
+          <span class="us-tag e4">US-08-agent</span>
+        </div>
+      </div>
+
+      <div class="person">
+        <div class="person-label">Pessoa C · Frontend</div>
+        <div class="us-tags">
+          <span class="us-tag e3">US-06</span>
+        </div>
+      </div>
+
+      <div class="week-risk"><strong>Meta da semana:</strong> criar campanha, subir documento, indexar e receber resposta do agente via texto. Fluxo de voz ainda desconectado do watsonx.</div>
+    </div>
+
+    <!-- Semana 2 -->
+    <div class="week">
+      <div class="week-header">
+        <span class="week-num">Semana 2</span>
+        <span class="week-label">Integração ponta a ponta</span>
+      </div>
+      <div class="week-focus">Com o RAG funcionando, conectar o handler de voz ao agente real. Fechar o ciclo completo: ligação → campanha → pergunta → resposta em áudio → histórico registrado.</div>
+
+      <div class="person">
+        <div class="person-label">Pessoa A · Backend</div>
+        <div class="us-tags">
+          <span class="us-tag e5">US-09</span>
+          <span class="us-tag e5">US-10</span>
+        </div>
+      </div>
+
+      <div class="person">
+        <div class="person-label">Pessoa B · Telefonia</div>
+        <div class="us-tags">
+          <span class="us-tag e4">US-08-handler</span>
+        </div>
+      </div>
+
+      <div class="person">
+        <div class="person-label">Pessoa C · Frontend</div>
+        <div class="us-tags">
+          <span class="us-tag e5">US-10 front</span>
+        </div>
+        <div style="font-size:11px;color:var(--gray500);margin-top:4px;">+ ajuda onde travar</div>
+      </div>
+
+      <div class="week-risk"><strong>Meta da semana:</strong> fluxo completo funcionando de ponta a ponta. Ligar → escolher campanha → perguntar → receber resposta em áudio → interação registrada no banco.</div>
+    </div>
+
+    <!-- Semana 3 -->
+    <div class="week">
+      <div class="week-header">
+        <span class="week-num">Semana 3</span>
+        <span class="week-label">Polimento + stretch + demo</span>
+      </div>
+      <div class="week-focus">MVP rodando. Decidir se atacam o Épico 1 (stretch) ou investem o tempo em deixar a demo sólida. Não começar o stretch antes do fluxo de voz estar estável.</div>
+
+      <div class="person">
+        <div class="person-label">Pessoa A · Se tiver tempo</div>
+        <div class="us-tags">
+          <span class="us-tag stretch">US-01</span>
+          <span class="us-tag stretch">US-02</span>
+          <span class="us-tag stretch">US-03-back</span>
+        </div>
+      </div>
+
+      <div class="person">
+        <div class="person-label">Pessoa C · Se tiver tempo</div>
+        <div class="us-tags">
+          <span class="us-tag stretch">US-03-front</span>
+        </div>
+      </div>
+
+      <div class="person">
+        <div class="person-label">Todos</div>
+        <div class="us-tags">
+          <span class="us-tag e4">Demo</span>
+          <span class="us-tag e4">Vídeo 3min</span>
+          <span class="us-tag e4">Documentação</span>
+        </div>
+      </div>
+
+      <div class="week-risk"><strong>Prioridade:</strong> demo sólida e vídeo > stretch. Um MVP que funciona ao vivo vale mais do que um dashboard bonito com o ciclo de voz quebrando.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="hint">
+  <strong>Como levar para o Figma:</strong> Abra no Chrome → selecione os cartões de um épico → Ctrl+C → Ctrl+V no Figma. Cole cada épico em um frame separado para manter a organização.
+</div>
+
+</body>
+</html>
