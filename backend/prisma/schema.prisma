@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum IndexacaoStatus {
+  PROCESSANDO
+  PRONTO
+  ERRO
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Campanha {
+  id           String     @id @default(cuid())
+  nome         String
+  // System prompt do agente educacional desta campanha.
+  // Nullable — campanhas sem descricao usam o prompt padrão do agente.
+  descricao    String?
+  ativa        Boolean    @default(true)
+  criadaEm    DateTime   @default(now()) @map("criada_em")
+  atualizadaEm DateTime   @updatedAt      @map("atualizada_em")
+
+  documentos   Documento[]
+
+  @@map("campanhas")
+}
+
+model Documento {
+  id               String           @id @default(cuid())
+  campanhaId       String           @map("campanha_id")
+  nomeOriginal     String           @map("nome_original")
+  mimeType         String           @map("mime_type")
+  caminhoArquivo   String           @map("caminho_arquivo")
+  statusIndexacao  IndexacaoStatus  @default(PROCESSANDO) @map("status_indexacao")
+  // Populado apenas quando statusIndexacao = ERRO
+  erroIndexacao    String?          @map("erro_indexacao")
+  criadoEm        DateTime         @default(now()) @map("criado_em")
+  atualizadoEm    DateTime         @updatedAt      @map("atualizado_em")
+
+  campanha         Campanha         @relation(fields: [campanhaId], references: [id], onDelete: Restrict)
+
+  @@map("documentos")
+}
