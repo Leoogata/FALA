@@ -1,45 +1,147 @@
-# backend/telephony-handler — Handler de Voz (STT → Agente → TTS)
+# backend/telephony-handler — Handler de Voz (Twilio → watsonx → TwiML)
 
 **Responsável pela US-08-handler.**
 
-Webhook que recebe o áudio de cada turno de uma chamada, transcreve com STT, chama o agente educacional no watsonx com o índice da campanha e devolve a resposta em áudio via TTS. É o único componente que orquestra todo o ciclo de voz.
+Webhooks Express que fecham o ciclo de voz: recebem o texto reconhecido pelo Twilio (`<Gather input="speech">`), invocam o agente orquestrador para identificar a matéria, chamam o subagente educacional correspondente e devolvem TwiML com a resposta falada via `<Say>`. Ao final de cada turno, registra a interação no serviço de analytics (US-09).
 
-## O que faz
+---
 
-- Expõe webhook consumido pelo provedor de telefonia (Twilio/etc.)
-- Transcreve o áudio do aluno via STT
-- Chama o agente educacional (`watsonx/agent-educational`) com `{ pergunta, campanha_id }`
-- Converte a resposta em áudio via TTS e devolve ao provedor
-- Trata `sem_resposta: true` com áudio de fallback orientando buscar o professor
-- Dispara `POST /interacoes` ao final de cada turno (US-09)
+## Estrutura
 
-## O que precisa estar aqui
+```
+backend/telephony-handler/
+├── src/
+│   ├── index.js                  # Entrypoint (listen)
+│   ├── app.js                    # Configuração Express + rotas
+│   ├── config.js                 # Variáveis de ambiente e defaults
+│   ├── routes/
+│   │   └── voice.js              # POST /voice/incoming e POST /voice/turn
+│   ├── handlers/
+│   │   ├── incomingHandler.js    # Lógica de /voice/incoming
+│   │   └── turnHandler.js        # Lógica de /voice/turn (ciclo principal)
+│   └── services/
+│       ├── twilioValidation.js   # Middleware de validação de assinatura Twilio
+│       ├── twiml.js              # Construtores de TwiML reutilizáveis
+│       ├── orchestrator.js       # Cliente do agente orquestrador watsonx
+│       ├── agentEducational.js   # Cliente dos subagentes educacionais watsonx
+│       ├── campanhas.js          # GET /campanhas (backend/api)
+│       ├── analytics.js          # POST /interacoes (backend/analytics, fire-and-forget)
+│       └── callSession.js        # Controle de tentativas por chamada (in-memory)
+└── tests/
+    └── voice.test.js             # Testes Jest + Supertest
+```
 
-- Handler HTTP do webhook de voz
-- Cliente STT (watsonx Speech, Deepgram, Google STT — a definir)
-- Cliente para o agente educacional no watsonx
-- Cliente TTS
-- Áudios de fallback pré-gravados (ou geração dinâmica)
-- Lógica de disparo do registro no serviço de analytics
-- Testes do ciclo completo com áudios de exemplo
+---
 
-## O que NÃO deve estar aqui
+## Endpoints
 
-- Configuração da URA ou do número de telefone (isso é `telephony`)
-- Prompt ou system message do agente (isso é `watsonx/agent-educational`)
-- Lógica de RAG (isso é `backend/rag-pipeline`)
-- Persistência direta no banco (chamar a API de analytics)
+### `POST /voice/incoming`
 
-## Como fala com os outros módulos
+Chamado pelo Twilio ao receber uma ligação.
 
-- **telephony** encaminha chamadas para este webhook após a URA
-- **watsonx/agent-educational** é consumido via API para gerar respostas
-- **backend/analytics** recebe `POST /interacoes` ao final de cada turno
+**Payload:** form-encoded (ver `telephony/webhook-contract.md`)
 
-## Risco principal
+**Resposta:** TwiML com `<Say>` de boas-vindas e `<Gather input="speech">` cujo `action` aponta para `/voice/turn`.
 
-Latência total do ciclo STT + inferência + TTS. Precisa ficar aceitável para uma conversa por telefone (ideal < 2s por turno).
+---
 
-## Setup
+### `POST /voice/turn`
 
-A ser preenchido quando os provedores STT/TTS forem escolhidos.
+Chamado pelo Twilio ao concluir o `<Gather>` (com ou sem fala).
+
+**Payload:** form-encoded com `SpeechResult`, `Confidence`, `CallSid` (ver `telephony/webhook-contract.md`)
+
+**Resposta:** TwiML de acordo com o resultado do processamento:
+
+| Situação | TwiML devolvido |
+|----------|----------------|
+| Fala válida + rota + resposta | `<Say>` resposta + `<Gather>` próximo turno |
+| Fala válida + rota + `sem_resposta: true` | `<Say>` fallback professor + `<Gather>` próximo turno |
+| Fala válida + `sem_rota: true` | `<Say>` pede reformulação + `<Gather>` |
+| Ausência/baixa confiança (< MAX_RETRIES) | `<Say>` pede repetição + `<Gather>` |
+| Ausência/baixa confiança (>= MAX_RETRIES) | `<Say>` encerramento + `<Hangup>` |
+| Aluno pressiona tecla | `<Say>` encerramento + `<Hangup>` |
+
+---
+
+## Validação de assinatura Twilio
+
+Todas as rotas passam pelo middleware `validateTwilioSignature`. A URL usada na validação deve ser exatamente igual à URL configurada no painel Twilio (incluindo protocolo, host e path).
+
+Em `NODE_ENV=test`, a validação é desabilitada para facilitar testes unitários.
+
+---
+
+## Variáveis de ambiente
+
+| Variável | Descrição | Default |
+|----------|-----------|---------|
+| `PORT` | Porta do servidor | `3000` |
+| `TWILIO_ACCOUNT_SID` | SID da conta Twilio | — |
+| `TWILIO_AUTH_TOKEN` | Auth token Twilio | — |
+| `TWILIO_PHONE_NUMBER` | Número Twilio em E.164 | — |
+| `TWILIO_STT_CONFIDENCE_THRESHOLD` | Confiança mínima de transcrição | `0.6` |
+| `VOICE_MAX_RETRIES` | Tentativas STT antes de encerrar | `2` |
+| `BACKEND_API_URL` | URL do backend/api (GET /campanhas) | — |
+| `ANALYTICS_SERVICE_URL` | URL do backend/analytics (POST /interacoes) | — |
+| `WATSONX_API_KEY` | Chave de API IBM Cloud | — |
+| `WATSONX_PROJECT_ID` | ID do projeto watsonx | — |
+| `WATSONX_AGENT_ORCHESTRATOR_ID` | ID da implantação ou serving name do orquestrador | — |
+| `WATSONX_AGENT_ID_HISTORIA` | ID da implantação ou serving name do subagente de História | — |
+| `WATSONX_AGENT_ID_GEOGRAFIA` | ID da implantação ou serving name do subagente de Geografia | — |
+| `WATSONX_AGENT_ID_PORTUGUES` | ID da implantação ou serving name do subagente de Português | — |
+| `WATSONX_AGENT_ID_MATEMATICA` | ID da implantação ou serving name do subagente de Matemática | — |
+| `WATSONX_AGENT_ID_CIENCIAS` | ID da implantação ou serving name do subagente de Ciências | — |
+| `ORCHESTRATOR_CONFIDENCE_THRESHOLD` | Confiança mínima do orquestrador | `0.5` |
+
+Mensagens de voz também são configuráveis via variáveis de ambiente (ver `src/config.js`).
+
+---
+
+## Execução local
+
+```bash
+# instalar dependências
+npm install
+
+# rodar em desenvolvimento (hot reload)
+npm run dev
+
+# rodar em produção
+npm start
+```
+
+Expor publicamente para testes com Twilio (requer ngrok ou equivalente):
+
+```bash
+ngrok http 3000
+# Use a URL HTTPS gerada como webhook no painel Twilio
+```
+
+---
+
+## Testes
+
+```bash
+npm test
+```
+
+Casos cobertos:
+- `POST /voice/incoming` — retorna TwiML de boas-vindas
+- Ausência de fala — pede repetição / encerra após limite
+- Baixa confiança STT — pede repetição
+- Encerramento por tecla
+- Roteamento para cada uma das 5 matérias
+- Pergunta ambígua / fora do escopo (`sem_rota: true`)
+- Caminho feliz — resposta disponível + registro no analytics
+- Fallback `sem_resposta: true` — áudio de fallback + registro no analytics
+
+---
+
+## O que NÃO está aqui
+
+- Configuração do número Twilio → `telephony/provider-setup.md`
+- Prompts e system messages dos agentes → `watsonx/agent-educational/system-prompt.md`
+- Lógica RAG → `backend/rag-pipeline`
+- Persistência direta no banco — o handler chama a API de analytics
+- Gravação ou armazenamento de áudio — não há no fluxo MVP

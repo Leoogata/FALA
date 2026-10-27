@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Contrato de I/O — Agentes Educacionais FALA",
+  "description": "Define as assinaturas de entrada e saída do orquestrador e dos subagentes educacionais watsonx.",
+
+  "definitions": {
+
+    "Campanha": {
+      "type": "object",
+      "description": "Representa uma campanha/matéria ativa disponível para roteamento.",
+      "required": ["campanhaId", "nome", "descricao"],
+      "properties": {
+        "campanhaId": {
+          "type": "string",
+          "description": "Identificador único da campanha.",
+          "enum": ["historia", "geografia", "portugues", "matematica", "ciencias"]
+        },
+        "nome": {
+          "type": "string",
+          "description": "Nome legível da campanha/matéria.",
+          "example": "História"
+        },
+        "descricao": {
+          "type": "string",
+          "description": "Descrição do escopo da campanha, usada pelo orquestrador para classificação.",
+          "example": "Perguntas sobre eventos históricos, períodos, figuras e processos históricos do Brasil e do mundo."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "RouteQuestionInput": {
+      "type": "object",
+      "description": "Entrada do agente orquestrador. Assinatura: orchestrator.routeQuestion({ pergunta, campanhasAtivas })",
+      "required": ["pergunta", "campanhasAtivas"],
+      "properties": {
+        "pergunta": {
+          "type": "string",
+          "description": "Texto transcrito da pergunta do aluno (SpeechResult do Twilio).",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "campanhasAtivas": {
+          "type": "array",
+          "description": "Lista de campanhas ativas no momento da chamada, obtida de GET /campanhas.",
+          "items": { "$ref": "#/definitions/Campanha" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "RouteQuestionOutput": {
+      "type": "object",
+      "description": "Saída do agente orquestrador.",
+      "required": ["campanhaId", "confianca", "sem_rota"],
+      "properties": {
+        "campanhaId": {
+          "type": ["string", "null"],
+          "description": "ID da campanha identificada. null quando sem_rota for true.",
+          "enum": ["historia", "geografia", "portugues", "matematica", "ciencias", null]
+        },
+        "confianca": {
+          "type": "number",
+          "description": "Grau de confiança do roteamento, entre 0.0 e 1.0.",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "sem_rota": {
+          "type": "boolean",
+          "description": "true quando a pergunta não se encaixa em nenhuma campanha ativa ou a confiança é insuficiente."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "AnswerQuestionInput": {
+      "type": "object",
+      "description": "Entrada do subagente educacional. Assinatura: agentEducational.answerQuestion({ campanhaId, pergunta })",
+      "required": ["campanhaId", "pergunta"],
+      "properties": {
+        "campanhaId": {
+          "type": "string",
+          "description": "ID da campanha roteada pelo orquestrador.",
+          "enum": ["historia", "geografia", "portugues", "matematica", "ciencias"]
+        },
+        "pergunta": {
+          "type": "string",
+          "description": "Texto da pergunta do aluno.",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "AnswerQuestionOutput": {
+      "type": "object",
+      "description": "Saída do subagente educacional.",
+      "required": ["resposta", "confianca", "sem_resposta"],
+      "properties": {
+        "resposta": {
+          "type": "string",
+          "description": "Texto da resposta para ser lido pelo TTS. Máximo 150 palavras. String vazia quando sem_resposta for true.",
+          "maxLength": 1000
+        },
+        "confianca": {
+          "type": "number",
+          "description": "Grau de confiança da resposta, entre 0.0 e 1.0. 0.0 quando sem_resposta for true.",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "sem_resposta": {
+          "type": "boolean",
+          "description": "true quando não há material validado para responder ou a pergunta está fora do escopo da matéria."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "IndexChunksInput": {
+      "type": "object",
+      "description": "[POSTERGADO — aguarda materiais didáticos] Entrada do watsonxClient.indexChunks.",
+      "required": ["campanhaId", "documentoId", "chunks"],
+      "properties": {
+        "campanhaId": {
+          "type": "string",
+          "description": "ID da campanha à qual os chunks pertencem."
+        },
+        "documentoId": {
+          "type": "string",
+          "description": "Identificador único do documento fonte. Usado para idempotência e para deleteDocumentChunks."
+        },
+        "chunks": {
+          "type": "array",
+          "description": "Lista de fragmentos de texto a indexar.",
+          "items": {
+            "type": "object",
+            "required": ["chunkId", "texto"],
+            "properties": {
+              "chunkId": { "type": "string" },
+              "texto": { "type": "string" }
+            }
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "SearchInput": {
+      "type": "object",
+      "description": "[POSTERGADO — aguarda materiais didáticos] Entrada do watsonxClient.search.",
+      "required": ["campanhaId", "query"],
+      "properties": {
+        "campanhaId": {
+          "type": "string",
+          "description": "Filtro obrigatório: retorna apenas chunks desta campanha."
+        },
+        "query": {
+          "type": "string",
+          "description": "Texto da consulta para busca semântica."
+        },
+        "topK": {
+          "type": "integer",
+          "description": "Número máximo de resultados. Padrão: 5.",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 20
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "SearchOutput": {
+      "type": "object",
+      "description": "[POSTERGADO] Saída do watsonxClient.search.",
+      "required": ["resultados"],
+      "properties": {
+        "resultados": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["chunkId", "texto", "score"],
+            "properties": {
+              "chunkId": { "type": "string" },
+              "texto": { "type": "string" },
+              "score": {
+                "type": "number",
+                "description": "Score de relevância normalizado entre 0.0 e 1.0.",
+                "minimum": 0.0,
+                "maximum": 1.0
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "DeleteDocumentChunksInput": {
+      "type": "object",
+      "description": "[POSTERGADO] Entrada do watsonxClient.deleteDocumentChunks. Operação idempotente.",
+      "required": ["campanhaId", "documentoId"],
+      "properties": {
+        "campanhaId": { "type": "string" },
+        "documentoId": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+
+  },
+
+  "agents": {
+
+    "orchestrator": {
+      "description": "Agente orquestrador — classifica a pergunta e devolve a campanha mais adequada.",
+      "input": { "$ref": "#/definitions/RouteQuestionInput" },
+      "output": { "$ref": "#/definitions/RouteQuestionOutput" }
+    },
+
+    "agentEducational": {
+      "description": "Subagentes educacionais — um por matéria, todos com o mesmo contrato de I/O.",
+      "campanhasSuportadas": ["historia", "geografia", "portugues", "matematica", "ciencias"],
+      "input": { "$ref": "#/definitions/AnswerQuestionInput" },
+      "output": { "$ref": "#/definitions/AnswerQuestionOutput" }
+    },
+
+    "watsonxClient": {
+      "description": "[POSTERGADO] Operações RAG — indexação, busca e deleção de chunks.",
+      "status": "postergado",
+      "razao": "Aguarda disponibilização dos materiais didáticos.",
+      "operations": {
+        "indexChunks": { "$ref": "#/definitions/IndexChunksInput" },
+        "search": {
+          "input": { "$ref": "#/definitions/SearchInput" },
+          "output": { "$ref": "#/definitions/SearchOutput" }
+        },
+        "deleteDocumentChunks": { "$ref": "#/definitions/DeleteDocumentChunksInput" }
+      }
+    }
+
+  }
+}

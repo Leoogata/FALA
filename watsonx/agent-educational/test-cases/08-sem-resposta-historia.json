@@ -1,0 +1,23 @@
+{
+  "id": "08-sem-resposta-historia",
+  "descricao": "Pergunta de História válida, mas sem material indexado — subagente deve retornar sem_resposta: true",
+  "pergunta": "O que foi a Revolução Francesa?",
+  "campanhasAtivas": [
+    { "campanhaId": "historia", "nome": "História", "descricao": "Perguntas sobre eventos históricos, períodos, figuras e processos históricos do Brasil e do mundo." },
+    { "campanhaId": "geografia", "nome": "Geografia", "descricao": "Perguntas sobre países, capitais, relevo, clima, biomas e geopolítica." },
+    { "campanhaId": "portugues", "nome": "Português", "descricao": "Perguntas sobre gramática, interpretação de texto, literatura e redação." },
+    { "campanhaId": "matematica", "nome": "Matemática", "descricao": "Perguntas sobre números, operações, geometria, álgebra e estatística." },
+    { "campanhaId": "ciencias", "nome": "Ciências", "descricao": "Perguntas sobre biologia, física, química e ciências da natureza." }
+  ],
+  "roteamento_esperado": {
+    "campanhaId": "historia",
+    "confianca_minima": 0.8,
+    "sem_rota": false
+  },
+  "subagente_esperado": {
+    "resposta": "",
+    "confianca": 0.0,
+    "sem_resposta": true
+  },
+  "observacao": "O roteamento deve funcionar corretamente. Mas o subagente de História não possui material indexado e deve retornar sem_resposta: true sem inventar conteúdo."
+}
