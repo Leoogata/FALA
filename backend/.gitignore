@@ -1,0 +1,7 @@
+node_modules/
+.env
+# Arquivos de upload (dados de usuário, não versionados)
+uploads/
+
+# macOS
+.DS_Store
