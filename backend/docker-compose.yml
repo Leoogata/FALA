@@ -1,0 +1,76 @@
+# docker-compose.yml — ambiente de desenvolvimento local
+#
+# Sobe:
+#   - app: o backend Ponte (com hot-reload via node --watch)
+#   - postgres: banco local para dev (não usado quando DATABASE_URL aponta para Supabase)
+#
+# Uso:
+#   docker compose up              → sobe tudo
+#   docker compose up app          → só o backend (se já tiver banco externo)
+#   docker compose down -v         → derruba e apaga volumes
+#
+# Para usar o Supabase como banco em vez do postgres local,
+# basta setar DATABASE_URL no .env com a connection string do Supabase.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: senha
+      POSTGRES_DB: ponte
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U usuario -d ponte"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Sobrescreve DATABASE_URL para usar o postgres local do compose
+      # Remova esta linha se quiser usar o Supabase
+      DATABASE_URL: postgresql://usuario:senha@postgres:5432/ponte
+    volumes:
+      # Persiste uploads entre restarts do container
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "npx prisma migrate deploy && node src/server.js"
+
+  # Serviço auxiliar para rodar migrações manualmente:
+  #   docker compose run --rm migrate
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://usuario:senha@postgres:5432/ponte
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npx prisma migrate deploy
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+  uploads_data:
