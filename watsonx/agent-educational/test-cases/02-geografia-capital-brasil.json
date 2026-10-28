@@ -1,0 +1,21 @@
+{
+  "id": "02-geografia-capital-brasil",
+  "descricao": "Pergunta de Geografia sobre a capital do Brasil — deve rotear para 'geografia'",
+  "pergunta": "Qual é a capital do Brasil?",
+  "campanhasAtivas": [
+    { "campanhaId": "historia", "nome": "História", "descricao": "Perguntas sobre eventos históricos, períodos, figuras e processos históricos do Brasil e do mundo." },
+    { "campanhaId": "geografia", "nome": "Geografia", "descricao": "Perguntas sobre países, capitais, relevo, clima, biomas e geopolítica." },
+    { "campanhaId": "portugues", "nome": "Português", "descricao": "Perguntas sobre gramática, interpretação de texto, literatura e redação." },
+    { "campanhaId": "matematica", "nome": "Matemática", "descricao": "Perguntas sobre números, operações, geometria, álgebra e estatística." },
+    { "campanhaId": "ciencias", "nome": "Ciências", "descricao": "Perguntas sobre biologia, física, química e ciências da natureza." }
+  ],
+  "roteamento_esperado": {
+    "campanhaId": "geografia",
+    "confianca_minima": 0.8,
+    "sem_rota": false
+  },
+  "subagente_esperado": {
+    "sem_resposta": true,
+    "justificativa": "Sem material didático indexado para Geografia nesta fase do MVP."
+  }
+}

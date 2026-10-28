@@ -1,0 +1,19 @@
+{
+  "id": "07-culinaria-sem-rota",
+  "descricao": "Pergunta de culinária — matéria fora das campanhas ativas, deve retornar sem_rota: true",
+  "pergunta": "Qual é a receita de bolo de cenoura?",
+  "campanhasAtivas": [
+    { "campanhaId": "historia", "nome": "História", "descricao": "Perguntas sobre eventos históricos, períodos, figuras e processos históricos do Brasil e do mundo." },
+    { "campanhaId": "geografia", "nome": "Geografia", "descricao": "Perguntas sobre países, capitais, relevo, clima, biomas e geopolítica." },
+    { "campanhaId": "portugues", "nome": "Português", "descricao": "Perguntas sobre gramática, interpretação de texto, literatura e redação." },
+    { "campanhaId": "matematica", "nome": "Matemática", "descricao": "Perguntas sobre números, operações, geometria, álgebra e estatística." },
+    { "campanhaId": "ciencias", "nome": "Ciências", "descricao": "Perguntas sobre biologia, física, química e ciências da natureza." }
+  ],
+  "roteamento_esperado": {
+    "campanhaId": null,
+    "confianca_maxima": 0.4,
+    "sem_rota": true
+  },
+  "subagente_esperado": null,
+  "observacao": "Culinária não é uma matéria das campanhas ativas. Não deve ser roteada para Ciências mesmo que a receita envolva reações químicas."
+}

@@ -1,3 +1,6 @@
+node_modules
+.env
+backend/telephony-handler/.env
 .mcp.json
 # macOS
 **/.DS_Store
