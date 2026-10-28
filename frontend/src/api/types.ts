@@ -64,8 +64,6 @@ export type StatusAgente = 'ativo' | 'inativo' | 'rascunho';
 
 export function calcularStatus(agente: AgenteResumo | AgenteDetalhe): StatusAgente {
   if (agente.ativa) return 'ativo';
-  const docs = agente.docs;
-  if (docs.pronto === 0) return 'rascunho';
   return 'inativo';
 }
 

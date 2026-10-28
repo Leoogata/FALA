@@ -71,10 +71,6 @@ export function AgentesPage() {
   }, [agentes, showToast]);
 
   const handleToggle = useCallback(async (ag: AgenteResumo, value: boolean) => {
-    if (ag.docs.pronto === 0 && value) {
-      showToast({ type: 'error', message: `"${ag.nome}" ainda não tem material pronto. Envie um material antes de ativar.` });
-      return;
-    }
     setToggleLoading(ag.id);
     try {
       await atualizarAgente(ag.id, { ativa: value });
@@ -348,7 +344,7 @@ function AgentRow({
   onToggle: (v: boolean) => void;
 }) {
   const status = calcStatus(ag);
-  const locked = !ag.ativa && ag.docs.pronto === 0;
+  const locked = false;
 
   function handleRowKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter') onOpen();
@@ -378,7 +374,6 @@ function AgentRow({
             onChange={onToggle}
             ariaLabel={ag.ativa ? `Desativar ${ag.nome}` : `Ativar ${ag.nome}`}
             locked={locked}
-            lockedTitle="Envie pelo menos 1 material pronto para ativar"
             loading={toggleLoading}
           />
           <Badge variant={status} />
@@ -405,7 +400,7 @@ function AgentCard({
   onToggle: (v: boolean) => void;
 }) {
   const status = calcStatus(ag);
-  const locked = !ag.ativa && ag.docs.pronto === 0;
+  const locked = false;
 
   return (
     <div
@@ -430,7 +425,6 @@ function AgentCard({
           onChange={onToggle}
           ariaLabel={ag.ativa ? `Desativar ${ag.nome}` : `Ativar ${ag.nome}`}
           locked={locked}
-          lockedTitle="Envie pelo menos 1 material pronto para ativar"
           loading={toggleLoading}
         />
       </div>

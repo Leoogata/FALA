@@ -31,10 +31,11 @@ export async function apiFetch<T>(
   clearTimeout(timer);
 
   if (!res.ok) {
-    let body: { erro?: string; mensagem?: string } = {};
+    let body: { erro?: string; mensagem?: string; error?: string } = {};
     try { body = await res.json(); } catch { /* ignore */ }
-    const erro = body.erro ?? 'erro_desconhecido';
-    const mensagem = body.mensagem ?? 'Algo deu errado. Tente de novo.';
+    // Suporta tanto { erro, mensagem } (formato antigo/mock) quanto { error } (backend)
+    const erro = body.erro ?? body.error ?? 'erro_desconhecido';
+    const mensagem = body.mensagem ?? body.error ?? 'Algo deu errado. Tente de novo.';
     throw new ApiError(res.status, erro, mensagem);
   }
 
@@ -75,12 +76,12 @@ export function apiUpload<T>(
           reject(new ApiError(xhr.status, 'parse_error', 'Resposta inválida do servidor.'));
         }
       } else {
-        let body: { erro?: string; mensagem?: string } = {};
+        let body: { erro?: string; mensagem?: string; error?: string } = {};
         try { body = JSON.parse(xhr.responseText); } catch { /* ignore */ }
         reject(new ApiError(
           xhr.status,
-          body.erro ?? 'erro_desconhecido',
-          body.mensagem ?? 'Algo deu errado. Tente de novo.',
+          body.erro ?? body.error ?? 'erro_desconhecido',
+          body.mensagem ?? body.error ?? 'Algo deu errado. Tente de novo.',
         ));
       }
     };

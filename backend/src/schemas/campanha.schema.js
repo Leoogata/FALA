@@ -13,10 +13,12 @@ export const EditarCampanhaSchema = z
   .object({
     nome: z.string().trim().min(3).max(100).optional(),
     descricao: z.string().trim().min(1).nullable().optional(),
+    // `instrucoes` é o alias enviado pelo frontend (mapeado para `descricao` no controller)
+    instrucoes: z.string().trim().min(1).nullable().optional(),
     ativa: z.boolean().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
-    message: 'Informe ao menos um campo para atualizar (nome, descricao ou ativa)',
+    message: 'Informe ao menos um campo para atualizar (nome, descricao, instrucoes ou ativa)',
   });
 
 export const CampanhaIdSchema = z.object({

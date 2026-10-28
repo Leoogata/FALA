@@ -34,10 +34,6 @@ export function DetalheAgentePage() {
 
   const handleToggle = useCallback(async (value: boolean) => {
     if (!agente) return;
-    if (!agente.ativa && agente.docs.pronto === 0) {
-      showToast({ type: 'error', message: `"${agente.nome}" ainda não tem material pronto. Envie um material antes de ativar.` });
-      return;
-    }
     setToggleLoading(true);
     try {
       await atualizarAgente(agente.id, { ativa: value });
@@ -100,7 +96,7 @@ export function DetalheAgentePage() {
   }
 
   const status = calcularStatus(agente);
-  const locked = !agente.ativa && agente.docs.pronto === 0;
+  const locked = false;
   const titulo = agente.nome;
 
   const tabs = [
@@ -141,7 +137,6 @@ export function DetalheAgentePage() {
             onChange={handleToggle}
             ariaLabel={agente.ativa ? `Desativar ${agente.nome}` : `Ativar ${agente.nome}`}
             locked={locked}
-            lockedTitle="Envie pelo menos 1 material pronto para ativar"
             loading={toggleLoading}
           />
           <Badge variant={status} />
@@ -149,12 +144,7 @@ export function DetalheAgentePage() {
       </div>
 
       {/* Faixas de aviso */}
-      {status === 'rascunho' && (
-        <div className="bg-[var(--draft-bg)] border border-[var(--draft)] text-[var(--draft)] text-sm rounded-xl px-4 py-3 mb-4">
-          Este agente ainda é um rascunho. Envie pelo menos um material e escreva as instruções para poder ativá-lo.
-        </div>
-      )}
-      {status !== 'rascunho' && !agente.instrucoes && (
+      {!agente.instrucoes && (
         <div className="bg-[var(--draft-bg)] border border-[var(--draft)] text-[var(--draft)] text-sm rounded-xl px-4 py-3 mb-4">
           Este agente ainda não tem instruções.{' '}
           <Link to={`/agentes/${id}/instrucoes`} className="underline font-medium">Escrever instruções</Link>

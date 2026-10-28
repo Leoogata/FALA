@@ -1,4 +1,8 @@
 import { campanhasService } from '../services/campanhas.service.js';
+import {
+  serializeCampanhaResumo,
+  serializeCampanhaDetalhe,
+} from '../serializers/campanha.serializer.js';
 
 // O watsonxClient é importado dinamicamente pelo controller apenas no caminho cascade,
 // para manter o acoplamento explícito e facilitar mock em testes.
@@ -11,7 +15,7 @@ export const campanhasController = {
   async criar(req, res, next) {
     try {
       const campanha = await campanhasService.criar(req.body);
-      res.status(201).json(campanha);
+      res.status(201).json(serializeCampanhaDetalhe(campanha));
     } catch (err) {
       next(err);
     }
@@ -20,7 +24,7 @@ export const campanhasController = {
   async listar(req, res, next) {
     try {
       const campanhas = await campanhasService.listar(req.query);
-      res.json(campanhas);
+      res.json(campanhas.map(serializeCampanhaResumo));
     } catch (err) {
       next(err);
     }
@@ -29,7 +33,7 @@ export const campanhasController = {
   async buscarPorId(req, res, next) {
     try {
       const campanha = await campanhasService.buscarPorId(req.params.id);
-      res.json(campanha);
+      res.json(serializeCampanhaDetalhe(campanha));
     } catch (err) {
       next(err);
     }
@@ -37,8 +41,14 @@ export const campanhasController = {
 
   async atualizar(req, res, next) {
     try {
-      const campanha = await campanhasService.atualizar(req.params.id, req.body);
-      res.json(campanha);
+      // Aceita `instrucoes` (alias do frontend) além de `descricao`
+      const { instrucoes, ...rest } = req.body;
+      const dados = instrucoes !== undefined
+        ? { ...rest, descricao: instrucoes }
+        : rest;
+
+      const campanha = await campanhasService.atualizar(req.params.id, dados);
+      res.json(serializeCampanhaDetalhe(campanha));
     } catch (err) {
       next(err);
     }

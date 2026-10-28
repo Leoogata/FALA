@@ -137,8 +137,6 @@ export function NovoAgentePage() {
 
     const toastMsg = ativado
       ? `"${agente.nome}" criado e ativo no 0800.`
-      : docsResumo.pronto === 0
-      ? `"${agente.nome}" criado como rascunho.`
       : `"${agente.nome}" criado (inativo).`;
 
     navigate('/agentes', { state: { newAgentId: agente.id } });
@@ -398,7 +396,7 @@ function Etapa3({
     <div>
       <h2 className="text-[17px] font-bold text-[var(--navy)] mb-1">Materiais do agente</h2>
       <p className="text-sm text-[var(--muted)] mb-4">
-        O agente só responde com base nestes arquivos. Você pode pular e enviar depois, mas só dá para ativar com pelo menos um material pronto.
+        O agente só responde com base nestes arquivos. Você pode pular e enviar depois.
       </p>
       <MaterialUploadArea agente={agente} onUploaded={(m) => setMateriais((prev) => [m, ...prev])} />
       <MaterialList
@@ -429,8 +427,6 @@ function Etapa4({
   onSpeak: () => void;
   hasSpeech: boolean;
 }) {
-  const canAtivate = docsResumo.pronto > 0;
-
   const materiaisTexto = (() => {
     const parts = [];
     if (docsResumo.pronto > 0) parts.push(`${docsResumo.pronto} pronto${docsResumo.pronto > 1 ? 's' : ''}`);
@@ -476,8 +472,7 @@ function Etapa4({
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
-            checked={ativarAgora && canAtivate}
-            disabled={!canAtivate}
+            checked={ativarAgora}
             onChange={(e) => setAtivarAgora(e.target.checked)}
             className="mt-0.5 w-4 h-4 accent-[var(--navy)]"
           />
@@ -486,11 +481,9 @@ function Etapa4({
             <p className="text-xs text-[var(--muted)] mt-0.5">O agente passa a aparecer no menu da ligação para os alunos.</p>
           </div>
         </label>
-        {!canAtivate && (
+        {docsResumo.processando > 0 && (
           <div className="mt-3 bg-[var(--draft-bg)] text-[var(--draft)] text-xs rounded-lg p-3">
-            {docsResumo.processando > 0
-              ? 'Os materiais ainda estão sendo processados. Você pode concluir agora e ativar o agente quando eles ficarem prontos.'
-              : 'Sem material pronto, o agente será salvo como rascunho.'}
+            Os materiais ainda estão sendo processados. Você pode concluir agora e ativar o agente quando eles ficarem prontos.
           </div>
         )}
       </div>
