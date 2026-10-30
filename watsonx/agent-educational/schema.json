@@ -56,9 +56,9 @@
       "required": ["campanhaId", "confianca", "sem_rota"],
       "properties": {
         "campanhaId": {
-          "type": ["string", "null"],
-          "description": "ID da campanha identificada. null quando sem_rota for true.",
-          "enum": ["historia", "geografia", "portugues", "matematica", "ciencias", null]
+          "type": "string",
+          "description": "ID da campanha ativa mais próxima, inclusive quando sem_rota for true.",
+          "enum": ["historia", "geografia", "portugues", "matematica", "ciencias"]
         },
         "confianca": {
           "type": "number",

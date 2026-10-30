@@ -10,10 +10,10 @@
     { "campanhaId": "ciencias", "nome": "Ciências", "descricao": "Perguntas sobre biologia, física, química e ciências da natureza." }
   ],
   "roteamento_esperado": {
-    "campanhaId": null,
+    "campanhaId_enum": ["historia", "geografia", "portugues", "matematica", "ciencias"],
     "confianca_maxima": 0.5,
     "sem_rota": true
   },
   "subagente_esperado": null,
-  "observacao": "Frase vaga sem conteúdo identificável. O orquestrador não deve arriscar um roteamento aleatório."
+  "observacao": "Frase vaga sem conteúdo identificável. O ID escolhido é apenas candidato; sem_rota impede o encaminhamento."
 }

@@ -3,9 +3,11 @@
 
 const axios = require('axios');
 const config = require('../config');
+const { parseModelResponse, validConfidence } = require('./modelResponse');
 
 const WATSONX_BASE_URL = 'https://us-south.ml.cloud.ibm.com';
 const WATSONX_API_VERSION = '2021-05-01';
+const CAMPANHAS_SUPORTADAS = new Set(['historia', 'geografia', 'portugues', 'matematica', 'ciencias']);
 
 /**
  * Obtém um token IAM IBM Cloud usando a WATSONX_API_KEY.
@@ -27,7 +29,7 @@ async function getIamToken() {
  * Chama o agente orquestrador watsonx para identificar a campanha da pergunta.
  *
  * @param {{ pergunta: string, campanhasAtivas: Array }} params
- * @returns {Promise<{ campanhaId: string|null, confianca: number, sem_rota: boolean }>}
+ * @returns {Promise<{ campanhaId: string, confianca: number, sem_rota: boolean }>}
  */
 async function routeQuestion({ pergunta, campanhasAtivas }) {
   const token = await getIamToken();
@@ -51,17 +53,22 @@ async function routeQuestion({ pergunta, campanhasAtivas }) {
     }
   );
 
-  // O prompt pede JSON puro. A remoção das cercas torna o cliente tolerante
-  // caso o modelo ainda as inclua na resposta.
-  const raw = response.data?.results?.[0]?.generated_text || response.data;
-  const result = typeof raw === 'string'
-    ? JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ''))
-    : raw;
+  const raw = response.data?.results?.[0]?.generated_text ?? response.data;
+  const result = parseModelResponse(raw);
+
+  if (!validConfidence(result.confianca) || typeof result.sem_rota !== 'boolean') {
+    throw new Error('Resposta inválida do orquestrador');
+  }
+
+  if (!CAMPANHAS_SUPORTADAS.has(result?.campanhaId) ||
+      !campanhasAtivas.some((campanha) => campanha.campanhaId === result.campanhaId)) {
+    throw new Error('O orquestrador retornou um ID de campanha inválido ou inativo');
+  }
 
   return {
-    campanhaId: result.campanhaId ?? null,
-    confianca: typeof result.confianca === 'number' ? result.confianca : 0,
-    sem_rota: result.sem_rota === true,
+    campanhaId: result.campanhaId,
+    confianca: result.confianca,
+    sem_rota: result.sem_rota,
   };
 }
 

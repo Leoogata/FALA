@@ -3,6 +3,7 @@
 
 const axios = require('axios');
 const config = require('../config');
+const { parseModelResponse, validConfidence } = require('./modelResponse');
 
 const WATSONX_BASE_URL = 'https://us-south.ml.cloud.ibm.com';
 const WATSONX_API_VERSION = '2021-05-01';
@@ -64,15 +65,18 @@ async function answerQuestion({ campanhaId, pergunta }) {
     }
   );
 
-  const raw = response.data?.results?.[0]?.generated_text || response.data;
-  const result = typeof raw === 'string'
-    ? JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ''))
-    : raw;
+  const raw = response.data?.results?.[0]?.generated_text ?? response.data;
+  const result = parseModelResponse(raw);
+  if (typeof result.resposta !== 'string' || result.resposta.length > 1000 ||
+      !validConfidence(result.confianca) || typeof result.sem_resposta !== 'boolean' ||
+      (result.sem_resposta ? result.resposta !== '' || result.confianca !== 0 : !result.resposta.trim())) {
+    throw new Error('Resposta inválida do subagente educacional');
+  }
 
   return {
-    resposta: result.resposta || '',
-    confianca: typeof result.confianca === 'number' ? result.confianca : 0,
-    sem_resposta: result.sem_resposta === true,
+    resposta: result.resposta,
+    confianca: result.confianca,
+    sem_resposta: result.sem_resposta,
   };
 }
 

@@ -10,10 +10,10 @@
     { "campanhaId": "ciencias", "nome": "Ciências", "descricao": "Perguntas sobre biologia, física, química e ciências da natureza." }
   ],
   "roteamento_esperado": {
-    "campanhaId": null,
+    "campanhaId_enum": ["historia", "geografia", "portugues", "matematica", "ciencias"],
     "confianca_maxima": 0.4,
     "sem_rota": true
   },
   "subagente_esperado": null,
-  "observacao": "Culinária não é uma matéria das campanhas ativas. Não deve ser roteada para Ciências mesmo que a receita envolva reações químicas."
+  "observacao": "Culinária não é uma matéria das campanhas ativas. O ID escolhido é apenas candidato; sem_rota impede o encaminhamento."
 }
