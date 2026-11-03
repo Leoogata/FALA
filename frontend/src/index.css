@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #1A1F3C;
+  --ink: #2C3340;
+  --muted: #6B7686;
+  --line: #DDE2EA;
+  --bg: #F4F5F7;
+  --card: #FFFFFF;
+  --soft: #F7F8FA;
+  --ok: #1F7A52;    --ok-bg: #E6F5EE;
+  --err: #B03A0B;   --err-bg: #FDECE4;
+  --proc: #3B63C4;  --proc-bg: #E8EFFD;
+  --draft: #8A5D00; --draft-bg: #FFF4DB;
+  --ai: #5B3FD0;    --ai-bg: #F1ECFF;
+  --off: #5A6576;   --off-bg: #EEF0F3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--bg);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus outline consistent */
+:focus-visible {
+  outline: 2px solid var(--proc);
+  outline-offset: 2px;
+}
+
+/* Keyframe for row highlight */
+@keyframes highlight {
+  0% { background-color: #FFF9C4; }
+  100% { background-color: transparent; }
+}
+
+.animate-highlight {
+  animation: highlight 2s ease-out;
+}
+
+/* Indeterminate progress bar */
+@keyframes progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}

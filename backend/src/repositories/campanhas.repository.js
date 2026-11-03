@@ -17,7 +17,13 @@ export const campanhasRepository = {
         descricao: true,
         ativa: true,
         criadaEm: true,
-        _count: { select: { documentos: true } },
+        atualizadaEm: true,
+        documentos: {
+          select: {
+            id: true,
+            statusIndexacao: true,
+          },
+        },
       },
       orderBy: { criadaEm: 'desc' },
     });
@@ -36,10 +42,13 @@ export const campanhasRepository = {
         documentos: {
           select: {
             id: true,
+            campanhaId: true,
             nomeOriginal: true,
             mimeType: true,
             statusIndexacao: true,
+            erroIndexacao: true,
             criadoEm: true,
+            atualizadoEm: true,
           },
           orderBy: { criadoEm: 'desc' },
         },
