@@ -36,19 +36,63 @@ function resolveAgentId(campanhaId) {
 }
 
 /**
+ * Busca chunks relevantes no índice RAG do backend para uma campanha.
+ *
+ * Operação best-effort com timeout agressivo: se falhar ou demorar,
+ * retorna null e o agente responde sem contexto (degradação graciosa).
+ *
+ * @param {string} campanhaId
+ * @param {string} pergunta
+ * @returns {Promise<string|null>} Texto concatenado dos chunks, ou null se falhar
+ */
+async function fetchRagContext(campanhaId, pergunta) {
+  if (!config.backendApiUrl || !config.ragInternalToken) return null;
+
+  try {
+    const url = new URL('/rag/search', config.backendApiUrl);
+    url.searchParams.set('campanhaId', campanhaId);
+    url.searchParams.set('query', pergunta);
+
+    const response = await axios.get(url.toString(), {
+      timeout: config.ragTimeoutMs,
+      headers: { Authorization: `Bearer ${config.ragInternalToken}` },
+    });
+
+    const resultados = response.data?.resultados ?? [];
+    if (resultados.length === 0) return null;
+
+    return resultados.map((r) => r.texto).join('\n\n');
+  } catch (err) {
+    console.warn(`[rag] Contexto indisponível para ${campanhaId}: ${err.message}`);
+    return null;
+  }
+}
+
+/**
  * Chama o subagente educacional correspondente à campanhaId.
+ * Injeta o contexto RAG na pergunta antes de enviar ao watsonx (Context Injection).
  *
  * @param {{ campanhaId: string, pergunta: string }} params
  * @returns {Promise<{ resposta: string, confianca: number, sem_resposta: boolean }>}
  */
 async function answerQuestion({ campanhaId, pergunta }) {
   const agentId = resolveAgentId(campanhaId);
-  const token = await getIamToken();
+
+  // Context Injection — busca chunks RAG em paralelo com o token IAM
+  const [token, contextoRag] = await Promise.all([
+    getIamToken(),
+    fetchRagContext(campanhaId, pergunta),
+  ]);
+
+  // Monta a pergunta enriquecida com contexto (ou a pergunta original se sem contexto)
+  const perguntaComContexto = contextoRag
+    ? `Contexto dos documentos da campanha:\n${contextoRag}\n\nPergunta do aluno: ${pergunta}`
+    : pergunta;
 
   const payload = {
     parameters: {
       prompt_variables: {
-        input: JSON.stringify({ campanhaId, pergunta }),
+        input: JSON.stringify({ campanhaId, pergunta: perguntaComContexto }),
       },
     },
   };
@@ -65,9 +109,12 @@ async function answerQuestion({ campanhaId, pergunta }) {
   );
 
   const raw = response.data?.results?.[0]?.generated_text || response.data;
-  const result = typeof raw === 'string'
-    ? JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ''))
-    : raw;
+  const result = typeof raw === 'string' ? extractJson(raw) : raw;
+
+  if (!result) {
+    console.warn(`[agentEducational] Não foi possível extrair JSON da resposta: ${String(raw).slice(0, 200)}`);
+    return { resposta: '', confianca: 0, sem_resposta: true };
+  }
 
   return {
     resposta: result.resposta || '',
@@ -76,4 +123,25 @@ async function answerQuestion({ campanhaId, pergunta }) {
   };
 }
 
-module.exports = { answerQuestion, resolveAgentId };
+/**
+ * Extrai o primeiro objeto JSON VÁLIDO de uma string que pode conter prosa,
+ * cercas de código, ou o mesmo objeto repetido/truncado. Varre candidatos
+ * { ... } e retorna o primeiro que parseia e contém a chave `resposta`.
+ */
+function extractJson(texto) {
+  const semCercas = String(texto).replace(/```(?:json)?/gi, '');
+  for (let i = 0; i < semCercas.length; i++) {
+    if (semCercas[i] !== '{') continue;
+    for (let j = semCercas.lastIndexOf('}'); j > i; j = semCercas.lastIndexOf('}', j - 1)) {
+      try {
+        const obj = JSON.parse(semCercas.slice(i, j + 1));
+        if (obj && typeof obj === 'object' && 'resposta' in obj) return obj;
+      } catch {
+        // tenta um '}' anterior
+      }
+    }
+  }
+  return null;
+}
+
+module.exports = { answerQuestion, resolveAgentId, fetchRagContext };

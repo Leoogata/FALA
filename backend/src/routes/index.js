@@ -5,6 +5,9 @@ import campanhasRouter from './campanhas.routes.js';
 import documentosRouter from './documentos.routes.js';
 import instrucoesRouter from './instrucoes.routes.js';
 import testarRouter from './testar.routes.js';
+import interacoesRouter from './interacoes.routes.js';
+import analyticsRouter from './analytics.routes.js';
+import ragRouter from './rag.routes.js';
 
 const router = Router();
 
@@ -19,5 +22,10 @@ router.use('/campanhas/:id/documentos', documentosRouter);
 router.use('/campanhas/:id/testar', testarRouter);
 // Instruções (melhorar com IA)
 router.use('/instrucoes', instrucoesRouter);
+// Analytics — ingestão e consulta de interações
+router.use('/interacoes', interacoesRouter);
+router.use('/analytics', analyticsRouter);
+// RAG search — endpoint interno para context injection (telephony-handler → backend)
+router.use('/rag', ragRouter);
 
 export default router;

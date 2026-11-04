@@ -51,18 +51,46 @@ async function routeQuestion({ pergunta, campanhasAtivas }) {
     }
   );
 
-  // O prompt pede JSON puro. A remoção das cercas torna o cliente tolerante
-  // caso o modelo ainda as inclua na resposta.
+  // O prompt pede JSON puro, mas o modelo às vezes inclui prosa antes/depois
+  // (ex: "Ou seja, {...}"). extractJson() isola o primeiro objeto JSON da
+  // resposta, tornando o roteamento resiliente a texto extra.
   const raw = response.data?.results?.[0]?.generated_text || response.data;
-  const result = typeof raw === 'string'
-    ? JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, ''))
-    : raw;
+  const result = typeof raw === 'string' ? extractJson(raw) : raw;
+
+  if (!result) {
+    console.warn(`[orchestrator] Não foi possível extrair JSON da resposta: ${String(raw).slice(0, 200)}`);
+    return { campanhaId: null, confianca: 0, sem_rota: true };
+  }
 
   return {
     campanhaId: result.campanhaId ?? null,
     confianca: typeof result.confianca === 'number' ? result.confianca : 0,
     sem_rota: result.sem_rota === true,
   };
+}
+
+/**
+ * Extrai o primeiro objeto JSON VÁLIDO de uma string que pode conter prosa,
+ * cercas de código, ou o mesmo objeto repetido várias vezes (o modelo às vezes
+ * repete ou trunca). Varre candidatos { ... } e retorna o primeiro que parseia
+ * e contém a chave `campanhaId`. Null se nenhum servir.
+ */
+function extractJson(texto) {
+  const semCercas = String(texto).replace(/```(?:json)?/gi, '');
+  // Varre cada posição de '{' e tenta fechar num objeto parseável,
+  // avançando pelo último '}' e recuando até achar um JSON válido.
+  for (let i = 0; i < semCercas.length; i++) {
+    if (semCercas[i] !== '{') continue;
+    for (let j = semCercas.lastIndexOf('}'); j > i; j = semCercas.lastIndexOf('}', j - 1)) {
+      try {
+        const obj = JSON.parse(semCercas.slice(i, j + 1));
+        if (obj && typeof obj === 'object' && 'campanhaId' in obj) return obj;
+      } catch {
+        // tenta um '}' anterior
+      }
+    }
+  }
+  return null;
 }
 
 module.exports = { routeQuestion };

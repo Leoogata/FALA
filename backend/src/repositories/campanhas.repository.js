@@ -1,10 +1,10 @@
 import prisma from '../config/prisma.js';
 
 export const campanhasRepository = {
-  async criar({ nome, descricao }) {
+  async criar({ nome, slug, descricao }) {
     return prisma.campanha.create({
-      data: { nome, descricao },
-      select: { id: true, nome: true, descricao: true, ativa: true, criadaEm: true },
+      data: { nome, slug, descricao },
+      select: { id: true, nome: true, slug: true, descricao: true, ativa: true, criadaEm: true },
     });
   },
 
@@ -14,6 +14,7 @@ export const campanhasRepository = {
       select: {
         id: true,
         nome: true,
+        slug: true,
         descricao: true,
         ativa: true,
         criadaEm: true,
@@ -29,12 +30,33 @@ export const campanhasRepository = {
     });
   },
 
+  /**
+   * Retorna campanhas ativas no formato esperado pelo orquestrador watsonx:
+   * { campanhaId, nome, descricao }
+   * Campanhas sem slug ou sem descricao são excluídas:
+   *   - slug é usado como campanhaId pelo orquestrador para rotear para o agente correto
+   *   - descricao é usada pelo orquestrador para classificar a pergunta
+   */
+  async listarAtivasParaOrquestrador() {
+    const campanhas = await prisma.campanha.findMany({
+      where: { ativa: true, slug: { not: null }, descricao: { not: null } },
+      select: { slug: true, nome: true, descricao: true },
+      orderBy: { criadaEm: 'desc' },
+    });
+    return campanhas.map((c) => ({
+      campanhaId: c.slug,
+      nome: c.nome,
+      descricao: c.descricao,
+    }));
+  },
+
   async buscarPorId(id) {
     return prisma.campanha.findUnique({
       where: { id },
       select: {
         id: true,
         nome: true,
+        slug: true,
         descricao: true,
         ativa: true,
         criadaEm: true,
@@ -63,6 +85,7 @@ export const campanhasRepository = {
       select: {
         id: true,
         nome: true,
+        slug: true,
         descricao: true,
         ativa: true,
         criadaEm: true,

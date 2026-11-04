@@ -16,14 +16,32 @@ const options = {
     tags: [
       { name: 'Campanhas', description: 'CRUD de campanhas didáticas' },
       { name: 'Documentos', description: 'Upload e remoção de documentos por campanha' },
+      { name: 'Analytics', description: 'Ingestão e consulta de interações de voz (anônimas)' },
+      { name: 'RAG', description: 'Busca semântica nos índices RAG por campanha (endpoint interno)' },
     ],
     components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          description: 'Token interno fixo (RAG_INTERNAL_TOKEN). Use para autenticar /rag/search.',
+        },
+      },
       schemas: {
         Campanha: {
           type: 'object',
           properties: {
             id: { type: 'string', example: 'clx1abc2def3ghi4jkl5' },
             nome: { type: 'string', example: 'Matemática — 9º ano EF' },
+            slug: {
+              type: 'string',
+              nullable: true,
+              enum: ['historia', 'geografia', 'portugues', 'matematica', 'ciencias'],
+              example: 'matematica',
+              description:
+                'Identificador semântico. Usado pelo orquestrador watsonx como campanhaId para roteamento de voz. ' +
+                'Campanhas sem slug não aparecem em GET /campanhas/ativas.',
+            },
             descricao: {
               type: 'string',
               nullable: true,
@@ -53,6 +71,58 @@ const options = {
             criadoEm: { type: 'string', format: 'date-time' },
           },
         },
+        Interacao: {
+          type: 'object',
+          description: 'Registro de interação de voz — dado estritamente anônimo',
+          properties: {
+            id: { type: 'string', example: 'clx9xyz0abc1def2ghi3' },
+            campanhaId: {
+              type: 'string',
+              example: 'matematica',
+              description: 'Slug semântico da campanha',
+            },
+            pergunta: { type: 'string', example: 'O que é equação do segundo grau?' },
+            resposta: { type: 'string', nullable: true },
+            scoreConfiancaStt: { type: 'number', format: 'float', nullable: true },
+            scoreConfiancaAgente: { type: 'number', format: 'float', nullable: true },
+            semResposta: { type: 'boolean' },
+            callSid: { type: 'string', example: 'CA0123456789abcdef' },
+            criadoEm: { type: 'string', format: 'date-time' },
+          },
+        },
+        AnalyticsCampanha: {
+          type: 'object',
+          properties: {
+            campanhaId: { type: 'string', example: 'matematica' },
+            totalInteracoes: { type: 'integer', example: 142 },
+            percentualSemResposta: {
+              type: 'number',
+              format: 'float',
+              example: 12.7,
+              description: '% de turnos onde o agente não soube responder',
+            },
+            topPerguntas: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  pergunta: { type: 'string' },
+                  total: { type: 'integer' },
+                },
+              },
+            },
+            volumePorDia: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  data: { type: 'string', format: 'date', example: '2025-07-01' },
+                  total: { type: 'integer' },
+                },
+              },
+            },
+          },
+        },
         Erro: {
           type: 'object',
           properties: {
@@ -62,7 +132,6 @@ const options = {
       },
     },
   },
-  // Rotas com JSDoc serão adicionadas nas etapas seguintes
   apis: ['./src/routes/*.js'],
 };
 

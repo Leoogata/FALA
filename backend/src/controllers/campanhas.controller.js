@@ -30,6 +30,15 @@ export const campanhasController = {
     }
   },
 
+  async listarAtivasParaOrquestrador(req, res, next) {
+    try {
+      const campanhas = await campanhasService.listarAtivasParaOrquestrador();
+      res.json(campanhas);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async buscarPorId(req, res, next) {
     try {
       const campanha = await campanhasService.buscarPorId(req.params.id);

@@ -16,9 +16,12 @@ function validateTwilioSignature(req, res, next) {
   const authToken = config.twilioAuthToken;
   const signature = req.headers['x-twilio-signature'] || '';
 
-  // A URL usada para validação deve ser exatamente a URL pública do endpoint,
-  // incluindo protocolo, host e path — sem querystring.
-  const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  // A URL usada para validação deve ser EXATAMENTE a URL pública que o Twilio
+  // assinou — incluindo o protocolo https. Atrás do ngrok, o TLS termina no
+  // proxy e a requisição chega como http internamente; por isso lemos o
+  // X-Forwarded-Proto (preenchido pelo ngrok) em vez de req.protocol.
+  const proto = req.headers['x-forwarded-proto'] || req.protocol;
+  const url = `${proto}://${req.get('host')}${req.originalUrl}`;
   const params = req.body || {};
 
   const isValid = twilio.validateRequest(authToken, signature, url, params);

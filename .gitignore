@@ -1,4 +1,4 @@
-﻿# ── Dependencies ──────────────────────────────────────────────
+# ── Dependencies ──────────────────────────────────────────────
 node_modules/
 .pnp
 .pnp.js
@@ -12,6 +12,8 @@ out/
 
 # ── Environment / secrets ─────────────────────────────────────
 .env
+.env.*
+!.env.example
 .env.local
 .env.*.local
 
@@ -51,8 +53,11 @@ coverage/
 htmlcov/
 .pytest_cache/
 
-
 backend/telephony-handler/.env
+# Arquivos de env soltos (ex.: env-fala copiado manualmente)
+env-fala*
+**/env-fala*
+
 .mcp.json
 
 # macOS

@@ -3,6 +3,7 @@
 
 const config = require('../config');
 const twiml = require('../services/twiml');
+const tts = require('../services/tts');
 const session = require('../services/callSession');
 const orchestrator = require('../services/orchestrator');
 const agentEducational = require('../services/agentEducational');
@@ -49,13 +50,19 @@ async function turnHandler(req, res) {
   // Fala válida — resetar contador de tentativas
   session.clearSession(callSid);
 
+  // Cronômetro — mede quanto cada etapa demora (diagnóstico de latência)
+  const t0 = Date.now();
+  const ms = (desde) => `${Date.now() - desde}ms`;
+
   // --- Roteamento ---
   let routeResult;
   let campanhasAtivas = [];
 
+  const tRota = Date.now();
   try {
     campanhasAtivas = await campanhas.getCampanhasAtivas();
     routeResult = await orchestrator.routeQuestion({ pergunta: speechResult, campanhasAtivas });
+    console.info(`[latencia] roteamento=${ms(tRota)}`, { callSid });
   } catch (err) {
     console.error(`[turn] Erro no roteamento: ${err.message}`, { callSid });
     return res.type('text/xml').send(twiml.buildNoRouteTwiml());
@@ -70,8 +77,10 @@ async function turnHandler(req, res) {
 
   // --- Subagente educacional ---
   let agentResult;
+  const tAgente = Date.now();
   try {
     agentResult = await agentEducational.answerQuestion({ campanhaId, pergunta: speechResult });
+    console.info(`[latencia] subagente=${ms(tAgente)}`, { callSid });
   } catch (err) {
     console.error(`[turn] Erro no subagente: ${err.message}`, { callSid, campanhaId });
     agentResult = { resposta: '', confianca: 0, sem_resposta: true };
@@ -90,12 +99,24 @@ async function turnHandler(req, res) {
     call_sid: callSid,
   });
 
-  // --- TwiML de resposta ---
-  if (sem_resposta) {
-    return res.type('text/xml').send(twiml.buildNoAnswerTwiml());
+  // --- Geração de áudio ElevenLabs (best-effort, fallback para Polly) ---
+  const textoParaFalar = sem_resposta ? config.fallbackMessages.semResposta : resposta;
+  const tTts = Date.now();
+  const audioUrl = await tts.textoParaAudioUrl(textoParaFalar);
+  console.info(`[latencia] tts=${ms(tTts)} | TOTAL=${ms(t0)}`, { callSid });
+
+  if (audioUrl) {
+    console.info(`[turn] TTS ElevenLabs OK: ${audioUrl}`, { callSid });
+  } else {
+    console.info('[turn] TTS ElevenLabs indisponível — usando Polly', { callSid });
   }
 
-  return res.type('text/xml').send(twiml.buildAnswerTwiml(resposta));
+  // --- TwiML de resposta ---
+  if (sem_resposta) {
+    return res.type('text/xml').send(twiml.buildNoAnswerTwiml(audioUrl));
+  }
+
+  return res.type('text/xml').send(twiml.buildAnswerTwiml(resposta, audioUrl));
 }
 
 module.exports = turnHandler;
