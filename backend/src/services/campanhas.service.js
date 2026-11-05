@@ -11,8 +11,26 @@ export const campanhasService = {
     return campanhasRepository.listar({ ativa });
   },
 
-  async listarAtivasParaOrquestrador() {
-    return campanhasRepository.listarAtivasParaOrquestrador();
+  /**
+   * Campanhas ativas para o orquestrador.
+   * Se `codigoEscola` for informado, resolve a escola e filtra as campanhas
+   * dela; se a escola não existir, lança 404. Sem código, retorna as
+   * campanhas "gerais" (sem escola).
+   */
+  async listarAtivasParaOrquestrador({ codigoEscola } = {}) {
+    let escolaId; // undefined → o repo trata como null (geral)
+    if (codigoEscola) {
+      const escola = await campanhasRepository.buscarEscolaPorCodigo(codigoEscola);
+      if (!escola) throw createError(404, 'Escola não encontrada para o código informado');
+      escolaId = escola.id;
+    }
+    return campanhasRepository.listarAtivasParaOrquestrador({ escolaId });
+  },
+
+  async buscarEscolaPorCodigo(codigo) {
+    const escola = await campanhasRepository.buscarEscolaPorCodigo(codigo);
+    if (!escola) throw createError(404, 'Escola não encontrada');
+    return escola;
   },
 
   async buscarPorId(id) {

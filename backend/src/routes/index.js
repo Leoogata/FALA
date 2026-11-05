@@ -2,6 +2,7 @@ import { Router } from 'express';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '../docs/swagger.js';
 import campanhasRouter from './campanhas.routes.js';
+import escolasRouter from './escolas.routes.js';
 import documentosRouter from './documentos.routes.js';
 import conversasRouter from './conversas.routes.js';
 import interacoesRouter from './interacoes.routes.js';
@@ -17,6 +18,8 @@ router.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rotas de negócio
 router.use('/campanhas', campanhasRouter);
+// Escolas — resolve código digitado na URA → escola (filtra campanhas por escola)
+router.use('/escolas', escolasRouter);
 // Documentos vivem sob /campanhas/:id/documentos
 router.use('/campanhas/:id/documentos', documentosRouter);
 // Testar agente

@@ -31,16 +31,20 @@ function normalizarNome(nome) {
 }
 
 /**
- * Busca e adapta as campanhas ativas de GET /campanhas.
+ * Busca e adapta as campanhas ativas de GET /campanhas/ativas.
  * Filtra apenas ativas, valida unicidade por matéria e mapeia para o
  * formato interno { id, campanhaId, nome, descricao }.
  *
+ * @param {string|null} codigoEscola — se informado, filtra pelas campanhas
+ *   daquela escola (?escola=<codigo>); sem ele, retorna o conteúdo geral.
  * @returns {Promise<Array<{ id: string, campanhaId: string, nome: string, descricao: string|null }>>}
  */
-async function getCampanhasAtivas() {
+async function getCampanhasAtivas(codigoEscola = null) {
+  const params = { ativa: true };
+  if (codigoEscola) params.escola = codigoEscola;
   const response = await axios.get(`${config.backendApiUrl}/campanhas/ativas`, {
     timeout: 5000,
-    params: { ativa: true },
+    params,
   });
 
   const todas = Array.isArray(response.data) ? response.data : [];
@@ -83,4 +87,22 @@ async function getCampanhasAtivas() {
   return resultado;
 }
 
-module.exports = { getCampanhasAtivas };
+/**
+ * Resolve o código de escola digitado no telefone.
+ * @param {string} codigo
+ * @returns {Promise<{ id: string, codigo: string, nome: string }|null>} null se não existir
+ */
+async function resolverEscola(codigo) {
+  try {
+    const response = await axios.get(
+      `${config.backendApiUrl}/escolas/${encodeURIComponent(codigo)}`,
+      { timeout: 5000 },
+    );
+    return response.data;
+  } catch (err) {
+    if (err.response && err.response.status === 404) return null;
+    throw err;
+  }
+}
+
+module.exports = { getCampanhasAtivas, resolverEscola };

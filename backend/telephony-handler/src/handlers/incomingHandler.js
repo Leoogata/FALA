@@ -1,10 +1,7 @@
 // src/handlers/incomingHandler.js — Handler POST /voice/incoming
 'use strict';
 
-const { randomUUID } = require('crypto');
 const twiml = require('../services/twiml');
-const session = require('../services/callSession');
-const conversaClient = require('../services/conversaClient');
 
 /**
  * POST /voice/incoming
@@ -23,33 +20,10 @@ async function incomingHandler(req, res) {
     return res.status(400).type('text/xml').send('<Response><Hangup/></Response>');
   }
 
-  // Calcular chave de identificação pseudônima
-  const { chave, versao } = session.calcularChaveChamada(callSid);
-
-  let conversaId;
-  try {
-    const conversa = await conversaClient.criarOuRecuperarConversa({
-      chaveChamada: chave,
-      versaoChave: versao,
-    });
-
-    if (conversa.estado !== 'ATIVA') {
-      console.warn('[incoming] Conversa não está ativa:', { estado: conversa.estado });
-      return res.type('text/xml').send(twiml.buildIndisponibilidadeTwiml());
-    }
-
-    conversaId = conversa.conversa_id;
-    session.setConversaId(callSid, conversaId);
-  } catch (err) {
-    console.error('[incoming] Falha ao criar conversa:', err.message);
-    return res.type('text/xml').send(twiml.buildIndisponibilidadeTwiml());
-  }
-
-  // Emitir primeiro token para esta captura
-  const turnoToken = randomUUID();
-  session.setTurnoToken(callSid, turnoToken);
-
-  return res.type('text/xml').send(twiml.buildWelcomeTwiml(turnoToken));
+  // Primeiro passo: pede o código da escola (DTMF). O aluno pode digitar ou
+  // aguardar para seguir no conteúdo geral. A resposta vai para /voice/escola,
+  // onde a conversa é criada e o primeiro turno_token é emitido.
+  return res.type('text/xml').send(twiml.buildPedirCodigoTwiml());
 }
 
 module.exports = incomingHandler;

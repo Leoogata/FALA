@@ -49,13 +49,29 @@ enum Materia {
 // Models
 // ─────────────────────────────────────────────────────────────────────────────
 
+model Escola {
+  id        String     @id @default(cuid())
+  // Código numérico que o aluno digita no teclado do telefone (DTMF).
+  codigo    String     @unique
+  nome      String
+  criadaEm  DateTime   @default(now()) @map("criada_em")
+
+  campanhas Campanha[]
+
+  @@map("escolas")
+}
+
 model Campanha {
   id           String   @id @default(cuid())
   nome         String
+  // Escola dona desta campanha. Nullable: campanhas sem escola formam o
+  // "conteúdo geral" (quando o aluno não digita um código na ligação).
+  escolaId     String?    @map("escola_id")
   // Identificador semântico para integração com o agente watsonx.
   // Nullable — campanhas sem slug não aparecem no roteamento de voz.
-  // Valores válidos: historia | geografia | portugues | matematica | ciencias
-  slug         String?  @unique
+  // Valores válidos: historia | geografia | portugues | matematica | ciencias | informatica | ...
+  // Não é @unique global — a unicidade é por escola (@@unique abaixo).
+  slug         String?
   // System prompt do agente educacional desta campanha.
   // Nullable — campanhas sem descricao usam o prompt padrão do agente.
   descricao    String?
@@ -63,9 +79,13 @@ model Campanha {
   criadaEm     DateTime @default(now()) @map("criada_em")
   atualizadaEm DateTime @default(now()) @updatedAt @map("atualizada_em")
 
-  documentos Documento[]
-  interacoes Interacao[]
+  escola       Escola?     @relation(fields: [escolaId], references: [id], onDelete: SetNull)
+  documentos   Documento[]
+  interacoes   Interacao[]
 
+  // slug é único POR escola (duas escolas podem ter cada uma a sua "historia").
+  // Campanhas sem escola (escolaId null) compartilham o espaço de slug "geral".
+  @@unique([escolaId, slug])
   @@map("campanhas")
 }
 

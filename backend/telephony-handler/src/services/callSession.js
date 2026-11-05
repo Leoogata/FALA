@@ -7,33 +7,47 @@ const crypto = require('crypto');
 const config = require('../config');
 
 /**
- * Map<callSid, { retries: number, conversaId: string|null, turnoToken: string|null }>
+ * Map<callSid, {
+ *   retries: number,
+ *   conversaId: string|null,
+ *   turnoToken: string|null,
+ *   codigoEscola: string|null   // escola escolhida na URA (null = conteúdo geral)
+ * }>
  */
 const sessions = new Map();
+
+function get(callSid) {
+  return sessions.get(callSid) || {};
+}
+
+function ensure(callSid) {
+  let s = sessions.get(callSid);
+  if (!s) {
+    s = { retries: 0, conversaId: null, turnoToken: null, codigoEscola: null };
+    sessions.set(callSid, s);
+  }
+  return s;
+}
 
 // ── Tentativas STT ────────────────────────────────────────────────────────────
 
 function getRetries(callSid) {
-  return sessions.get(callSid)?.retries || 0;
+  return get(callSid).retries || 0;
 }
 
 function incrementRetries(callSid) {
-  const session = sessions.get(callSid) || { retries: 0, conversaId: null, turnoToken: null };
-  session.retries += 1;
-  sessions.set(callSid, session);
-  return session.retries;
+  const s = ensure(callSid);
+  s.retries += 1;
+  return s.retries;
 }
 
 /**
- * Zera somente as tentativas STT — preserva conversaId e turnoToken.
+ * Zera somente as tentativas STT — preserva conversaId, turnoToken e escola.
  * Usado após fala válida reconhecida.
  */
 function resetRetries(callSid) {
-  const session = sessions.get(callSid);
-  if (session) {
-    session.retries = 0;
-    sessions.set(callSid, session);
-  }
+  const s = sessions.get(callSid);
+  if (s) s.retries = 0;
 }
 
 // ── Conversa e tokens ─────────────────────────────────────────────────────────
@@ -43,9 +57,7 @@ function getConversaId(callSid) {
 }
 
 function setConversaId(callSid, conversaId) {
-  const session = sessions.get(callSid) || { retries: 0, conversaId: null, turnoToken: null };
-  session.conversaId = conversaId;
-  sessions.set(callSid, session);
+  ensure(callSid).conversaId = conversaId;
 }
 
 function getTurnoToken(callSid) {
@@ -53,9 +65,23 @@ function getTurnoToken(callSid) {
 }
 
 function setTurnoToken(callSid, turnoToken) {
-  const session = sessions.get(callSid) || { retries: 0, conversaId: null, turnoToken: null };
-  session.turnoToken = turnoToken;
-  sessions.set(callSid, session);
+  ensure(callSid).turnoToken = turnoToken;
+}
+
+// ── Escola (URA por código) ───────────────────────────────────────────────────
+
+/**
+ * Guarda o código da escola escolhida na chamada (ou null para o fluxo geral).
+ */
+function setEscola(callSid, codigoEscola) {
+  ensure(callSid).codigoEscola = codigoEscola || null;
+}
+
+/**
+ * Retorna o código da escola da chamada, ou null se não houver (fluxo geral).
+ */
+function getEscola(callSid) {
+  return sessions.get(callSid)?.codigoEscola ?? null;
 }
 
 // ── HMAC de identificação ─────────────────────────────────────────────────────
@@ -92,6 +118,8 @@ module.exports = {
   setConversaId,
   getTurnoToken,
   setTurnoToken,
+  setEscola,
+  getEscola,
   calcularChaveChamada,
   clearSession,
 };

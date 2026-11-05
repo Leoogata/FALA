@@ -71,7 +71,7 @@ beforeEach(() => {
 // ──────────────────────────────────────────────────────────
 
 describe('POST /voice/incoming', () => {
-  it('deve criar conversa e retornar TwiML com <Gather input="speech"> e Say de boas-vindas', async () => {
+  it('deve pedir o código da escola via DTMF e rotear para /voice/escola', async () => {
     const res = await request(app)
       .post('/voice/incoming')
       .type('form')
@@ -80,6 +80,22 @@ describe('POST /voice/incoming', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/text\/xml/);
     expect(res.text).toContain('<Gather');
+    expect(res.text).toContain('input="dtmf"');
+    expect(res.text).toContain('/voice/escola');
+  });
+});
+
+// ──────────────────────────────────────────────────────────
+// POST /voice/escola — captura do código da escola (DTMF)
+// ──────────────────────────────────────────────────────────
+describe('POST /voice/escola', () => {
+  it('sem dígitos → segue para o Gather de voz (fluxo geral)', async () => {
+    const res = await request(app)
+      .post('/voice/escola')
+      .type('form')
+      .send({ CallSid: 'CA-ESC-1', Digits: '' });
+
+    expect(res.status).toBe(200);
     expect(res.text).toContain('input="speech"');
     expect(res.text).toContain('/voice/turn');
     expect(conversaClient.criarOuRecuperarConversa).toHaveBeenCalledOnce
@@ -98,12 +114,15 @@ describe('POST /voice/incoming', () => {
   });
 
   it('deve retornar indisponibilidade se o banco falhar', async () => {
+    // A criação da conversa agora ocorre em /voice/escola (após a captura do
+    // código da escola), não mais em /voice/incoming. A falha de banco é
+    // tratada lá.
     conversaClient.criarOuRecuperarConversa.mockRejectedValue(new Error('DB down'));
 
     const res = await request(app)
-      .post('/voice/incoming')
+      .post('/voice/escola')
       .type('form')
-      .send({ CallSid: 'CA-fail', CallStatus: 'ringing' });
+      .send({ CallSid: 'CA-fail', Digits: '' });
 
     expect(res.status).toBe(200);
     expect(res.text).toContain('<Hangup');

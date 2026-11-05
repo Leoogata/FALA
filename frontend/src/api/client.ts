@@ -1,7 +1,8 @@
 import { ApiError } from './types';
 import { TIMEOUT_PADRAO_MS } from '../config';
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+// Porta 3001 = backend/api. (3000 é o telephony-handler.) Sobrescreva via VITE_API_URL.
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 
 export async function apiFetch<T>(
   path: string,

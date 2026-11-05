@@ -32,8 +32,19 @@ export const campanhasController = {
 
   async listarAtivasParaOrquestrador(req, res, next) {
     try {
-      const campanhas = await campanhasService.listarAtivasParaOrquestrador();
+      // ?escola=<codigo> filtra pela escola; sem ele, retorna o conteúdo geral
+      const codigoEscola = req.query.escola || undefined;
+      const campanhas = await campanhasService.listarAtivasParaOrquestrador({ codigoEscola });
       res.json(campanhas);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async buscarEscolaPorCodigo(req, res, next) {
+    try {
+      const escola = await campanhasService.buscarEscolaPorCodigo(req.params.codigo);
+      res.json(escola);
     } catch (err) {
       next(err);
     }

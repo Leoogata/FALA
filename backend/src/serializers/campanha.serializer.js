@@ -52,9 +52,11 @@ function calcDocs(documentos) {
  * @param {object} campanha
  */
 export function serializeCampanhaDetalhe(campanha) {
-  const documentos = campanha.documentos
-    ? campanha.documentos.map(serializeDocumento)
-    : undefined;
+  // Sempre devolve `documentos` como array (nunca undefined), honrando o tipo
+  // AgenteDetalhe do frontend (documentos: Material[]). Quando a campanha não
+  // traz documentos (ex.: resposta do PATCH), devolve [] em vez de omitir —
+  // o front faz .map()/useState direto neste campo e quebra se vier undefined.
+  const documentos = (campanha.documentos ?? []).map(serializeDocumento);
 
   return {
     id: campanha.id,
@@ -63,8 +65,8 @@ export function serializeCampanhaDetalhe(campanha) {
     instrucoes: campanha.descricao ?? null,
     criada_em: campanha.criadaEm,
     atualizada_em: campanha.atualizadaEm ?? campanha.criadaEm,
-    docs: documentos ? calcDocs(documentos) : { pronto: 0, processando: 0, erro: 0 },
-    ...(documentos !== undefined && { documentos }),
+    docs: calcDocs(documentos),
+    documentos,
   };
 }
 

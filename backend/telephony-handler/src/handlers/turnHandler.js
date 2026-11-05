@@ -87,7 +87,7 @@ async function turnHandler(req, res) {
     return res.type('text/xml').send(twiml.buildSttRetryTwiml(proximoToken));
   }
 
-  // Fala válida — zerar somente tentativas, manter contexto
+  // Fala válida — zera só as tentativas, preservando contexto e escola da sessão
   session.resetRetries(callSid);
 
   // ── Determinar token deste turno ───────────────────────────────────────────
@@ -165,9 +165,11 @@ async function turnHandler(req, res) {
 
   const tRota = Date.now();
   try {
-    campanhasAtivas = await campanhas.getCampanhasAtivas();
+    // Filtra campanhas pela escola escolhida na URA (null = conteúdo geral)
+    const codigoEscola = session.getEscola(callSid);
+    campanhasAtivas = await campanhas.getCampanhasAtivas(codigoEscola);
     routeResult = await orchestrator.routeQuestion({ pergunta: perguntaParaModelo, campanhasAtivas, historico });
-    console.info(`[latencia] roteamento=${ms(tRota)}`, { conversaId });
+    console.info(`[latencia] roteamento=${ms(tRota)} escola=${codigoEscola ?? 'geral'}`, { conversaId });
   } catch (err) {
     console.error('[turn] Erro no roteamento:', err.message);
     try {

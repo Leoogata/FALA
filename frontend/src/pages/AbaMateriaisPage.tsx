@@ -12,7 +12,7 @@ interface OutletCtx {
 
 export function AbaMateriaisPage() {
   const { agente, onAgenteChange } = useOutletContext<OutletCtx>();
-  const [materiais, setMateriais] = useState<Material[]>(agente.documentos);
+  const [materiais, setMateriais] = useState<Material[]>(agente.documentos ?? []);
 
   function handleUploaded(m: Material) {
     setMateriais((prev) => [m, ...prev]);

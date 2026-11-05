@@ -72,6 +72,13 @@ module.exports = {
       || 'Não consegui entender sua dúvida. Por favor, tente ligar novamente em um local mais silencioso. Até logo!',
     boasVindas: process.env.MSG_BOAS_VINDAS
       || 'Olá! Sou o assistente educacional da FALA. Pode fazer sua pergunta sobre qualquer matéria escolar. Estou ouvindo.',
+    pedirCodigo: process.env.MSG_PEDIR_CODIGO
+      || 'Olá! Aqui é a FALA. Se você tem o código da sua escola, digite agora no teclado. '
+      + 'Para continuar sem código, é só aguardar.',
+    codigoInvalido: process.env.MSG_CODIGO_INVALIDO
+      || 'Não encontrei esse código de escola. Vou continuar com o conteúdo geral.',
+    escolaConfirmada: process.env.MSG_ESCOLA_CONFIRMADA
+      || 'Escola encontrada! Agora pode fazer sua pergunta.',
     proximoTurno: process.env.MSG_PROXIMO_TURNO
       || 'Pode fazer outra pergunta ou pressione qualquer tecla para encerrar.',
     encerramento: process.env.MSG_ENCERRAMENTO

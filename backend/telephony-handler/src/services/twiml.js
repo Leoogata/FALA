@@ -37,10 +37,40 @@ function addSpeech(node, texto, audioUrl) {
 }
 
 /**
- * TwiML de boas-vindas: fala + Gather para capturar a pergunta inicial.
+ * TwiML inicial: pede o código da escola via teclado (DTMF).
+ * Gather de dígitos com finishOnKey e timeout — se o aluno não digitar,
+ * o Gather expira e o <Redirect> leva a /voice/escola sem dígitos (fluxo geral).
  */
-function buildWelcomeTwiml(turnoToken) {
+function buildPedirCodigoTwiml() {
   const response = new VoiceResponse();
+  const gather = response.gather({
+    input: 'dtmf',
+    numDigits: 4,
+    timeout: 6,
+    finishOnKey: '#',
+    action: '/voice/escola',
+    method: 'POST',
+  });
+  addSpeech(gather, config.fallbackMessages.pedirCodigo, urlMensagemFixa('pedirCodigo'));
+  // Sem dígitos (timeout) → segue para /voice/escola sem Digits = fluxo geral
+  response.redirect({ method: 'POST' }, '/voice/escola');
+  return response.toString();
+}
+
+/**
+ * TwiML de boas-vindas: fala + Gather para capturar a pergunta inicial.
+ * @param {string} turnoToken — token para esta captura (sistema de conversa).
+ * @param {object} [opts]
+ * @param {string|null} opts.prefixoTexto — mensagem curta antes das boas-vindas
+ *   (ex.: confirmação de escola ou aviso de código inválido). Opcional.
+ * @param {string|null} opts.prefixoAudioUrl — áudio do prefixo, se houver.
+ */
+function buildWelcomeTwiml(turnoToken, opts = {}) {
+  const { prefixoTexto = null, prefixoAudioUrl = null } = opts;
+  const response = new VoiceResponse();
+  if (prefixoTexto) {
+    addSpeech(response, prefixoTexto, prefixoAudioUrl);
+  }
   const gather = response.gather({
     input: 'speech',
     language: LANGUAGE,
@@ -189,6 +219,7 @@ function buildHangupTwiml() {
 }
 
 module.exports = {
+  buildPedirCodigoTwiml,
   buildWelcomeTwiml,
   buildSttRetryTwiml,
   buildSttMaxRetriesTwiml,

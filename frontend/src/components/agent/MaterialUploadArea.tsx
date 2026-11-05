@@ -41,7 +41,7 @@ export function MaterialUploadArea({ agente, onUploaded }: Props) {
     setUploadErrors([]);
     const errors: UploadError[] = [];
     const valid: File[] = [];
-    const existingNames = agente.documentos.map((d) => d.nome_original);
+    const existingNames = (agente.documentos ?? []).map((d) => d.nome_original);
 
     for (const file of files) {
       const err = validateFile(file, existingNames);

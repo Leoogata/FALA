@@ -31,15 +31,21 @@ export const campanhasRepository = {
   },
 
   /**
-   * Retorna campanhas ativas no formato esperado pelo orquestrador watsonx:
-   * { campanhaId, nome, descricao }
-   * Campanhas sem slug ou sem descricao são excluídas:
-   *   - slug é usado como campanhaId pelo orquestrador para rotear para o agente correto
-   *   - descricao é usada pelo orquestrador para classificar a pergunta
+   * Lista campanhas ativas no formato do orquestrador: { id, campanhaId, nome, descricao }.
+   * Campanhas sem slug ou sem descricao são excluídas (o orquestrador precisa de ambos).
+   * @param {{ escolaId?: string|null }} opts
+   *   - escolaId string  → campanhas daquela escola
+   *   - escolaId null/undefined → campanhas SEM escola (conteúdo "geral",
+   *     usado quando o aluno não digita um código na ligação)
    */
-  async listarAtivasParaOrquestrador() {
+  async listarAtivasParaOrquestrador({ escolaId } = {}) {
     const campanhas = await prisma.campanha.findMany({
-      where: { ativa: true, slug: { not: null }, descricao: { not: null } },
+      where: {
+        ativa: true,
+        slug: { not: null },
+        descricao: { not: null },
+        escolaId: escolaId ?? null,
+      },
       select: { id: true, slug: true, nome: true, descricao: true },
       orderBy: { criadaEm: 'desc' },
     });
@@ -49,6 +55,13 @@ export const campanhasRepository = {
       nome: c.nome,
       descricao: c.descricao,
     }));
+  },
+
+  async buscarEscolaPorCodigo(codigo) {
+    return prisma.escola.findUnique({
+      where: { codigo },
+      select: { id: true, codigo: true, nome: true },
+    });
   },
 
   async buscarPorId(id) {
@@ -98,6 +111,21 @@ export const campanhasRepository = {
         ativa: true,
         criadaEm: true,
         atualizadaEm: true,
+        // Inclui documentos para que a resposta do PATCH traga docs/documentos
+        // consistentes (senão a contagem zera na tela após editar/ativar).
+        documentos: {
+          select: {
+            id: true,
+            campanhaId: true,
+            nomeOriginal: true,
+            mimeType: true,
+            statusIndexacao: true,
+            erroIndexacao: true,
+            criadoEm: true,
+            atualizadoEm: true,
+          },
+          orderBy: { criadoEm: 'desc' },
+        },
       },
     });
   },
