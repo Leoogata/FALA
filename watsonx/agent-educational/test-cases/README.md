@@ -23,6 +23,6 @@ Os casos de teste são executados manualmente no watsonx Studio durante a fase d
 | `03-portugues-sujeito.json` | Dentro do escopo | `portugues` |
 | `04-matematica-fracao.json` | Dentro do escopo | `matematica` |
 | `05-ciencias-fotossintese.json` | Dentro do escopo | `ciencias` |
-| `06-ambigua-sem-rota.json` | Fora do escopo | `null` / `sem_rota: true` |
-| `07-culinaria-sem-rota.json` | Fora do escopo | `null` / `sem_rota: true` |
+| `06-ambigua-sem-rota.json` | Fora do escopo | ID de campanha ativa / `sem_rota: true` |
+| `07-culinaria-sem-rota.json` | Fora do escopo | ID de campanha ativa / `sem_rota: true` |
 | `08-sem-resposta-historia.json` | Sem material indexado | `historia` / `sem_resposta: true` |

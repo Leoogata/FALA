@@ -3,9 +3,11 @@
 
 const axios = require('axios');
 const config = require('../config');
+const { parseModelResponse, validConfidence } = require('./modelResponse');
 
 const WATSONX_BASE_URL = 'https://us-south.ml.cloud.ibm.com';
 const WATSONX_API_VERSION = '2021-05-01';
+const CAMPANHAS_SUPORTADAS = new Set(['historia', 'geografia', 'portugues', 'matematica', 'ciencias']);
 
 /**
  * Obtém um token IAM IBM Cloud usando a WATSONX_API_KEY.
@@ -26,16 +28,22 @@ async function getIamToken() {
 /**
  * Chama o agente orquestrador watsonx para identificar a campanha da pergunta.
  *
- * @param {{ pergunta: string, campanhasAtivas: Array }} params
- * @returns {Promise<{ campanhaId: string|null, confianca: number, sem_rota: boolean }>}
+ * @param {{ pergunta: string, campanhasAtivas: Array, historico?: Array }} params
+ * @returns {Promise<{
+ *   campanhaId: string,
+ *   confianca: number,
+ *   sem_rota: boolean,
+ *   precisa_esclarecimento: boolean,
+ *   pergunta_esclarecimento: string
+ * }>}
  */
-async function routeQuestion({ pergunta, campanhasAtivas }) {
+async function routeQuestion({ pergunta, campanhasAtivas, historico = [] }) {
   const token = await getIamToken();
 
   const payload = {
     parameters: {
       prompt_variables: {
-        input: JSON.stringify({ pergunta, campanhasAtivas }),
+        input: JSON.stringify({ pergunta, campanhasAtivas, historico }),
       },
     },
   };
@@ -51,21 +59,34 @@ async function routeQuestion({ pergunta, campanhasAtivas }) {
     }
   );
 
-  // O prompt pede JSON puro, mas o modelo às vezes inclui prosa antes/depois
-  // (ex: "Ou seja, {...}"). extractJson() isola o primeiro objeto JSON da
-  // resposta, tornando o roteamento resiliente a texto extra.
-  const raw = response.data?.results?.[0]?.generated_text || response.data;
-  const result = typeof raw === 'string' ? extractJson(raw) : raw;
+  const raw = response.data?.results?.[0]?.generated_text ?? response.data;
+  const result = parseModelResponse(raw);
 
-  if (!result) {
-    console.warn(`[orchestrator] Não foi possível extrair JSON da resposta: ${String(raw).slice(0, 200)}`);
-    return { campanhaId: null, confianca: 0, sem_rota: true };
+  if (!validConfidence(result.confianca) || typeof result.sem_rota !== 'boolean') {
+    throw new Error('Resposta inválida do orquestrador');
+  }
+
+  // Validar campos de esclarecimento (novos campos com retrocompatibilidade)
+  const precisaEsclarecimento = result.precisa_esclarecimento === true;
+  const perguntaEsclarecimento = typeof result.pergunta_esclarecimento === 'string'
+    ? result.pergunta_esclarecimento.slice(0, 300)
+    : '';
+
+  if (precisaEsclarecimento && !perguntaEsclarecimento) {
+    throw new Error('precisa_esclarecimento=true mas pergunta_esclarecimento ausente');
+  }
+
+  if (!CAMPANHAS_SUPORTADAS.has(result?.campanhaId) ||
+      !campanhasAtivas.some((campanha) => campanha.campanhaId === result.campanhaId)) {
+    throw new Error('O orquestrador retornou um ID de campanha inválido ou inativo');
   }
 
   return {
-    campanhaId: result.campanhaId ?? null,
-    confianca: typeof result.confianca === 'number' ? result.confianca : 0,
-    sem_rota: result.sem_rota === true,
+    campanhaId: result.campanhaId,
+    confianca: result.confianca,
+    sem_rota: result.sem_rota,
+    precisa_esclarecimento: precisaEsclarecimento,
+    pergunta_esclarecimento: perguntaEsclarecimento,
   };
 }
 

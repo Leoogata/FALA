@@ -30,6 +30,19 @@ module.exports = {
 
   // URLs de outros serviços
   backendApiUrl: process.env.BACKEND_API_URL || '',
+
+  // Autenticação interna entre serviços (usado pelo conversaClient)
+  internalApiKey: process.env.INTERNAL_API_KEY || '',
+
+  // HMAC de identificação de chamadas (nunca persistir CallSid original)
+  hmacSecret: process.env.HMAC_SECRET || '',
+  hmacSecretVersion: process.env.HMAC_SECRET_VERSION || 'v1',
+
+  // Timeout para chamadas ao backend de conversas (ms)
+  conversaClientTimeoutMs: parseInt(process.env.CONVERSA_CLIENT_TIMEOUT_MS || '8000', 10),
+
+  // Rastreabilidade de prompt implantado no watsonx
+  versaoPrompt: process.env.VERSAO_PROMPT || null,
   analyticsServiceUrl: process.env.ANALYTICS_SERVICE_URL || '',
   // URL pública do próprio servidor (ngrok/CF tunnel/produção)
   // Necessária para gerar URLs de áudio acessíveis pelo Twilio via <Play>
@@ -63,5 +76,7 @@ module.exports = {
       || 'Pode fazer outra pergunta ou pressione qualquer tecla para encerrar.',
     encerramento: process.env.MSG_ENCERRAMENTO
       || 'Até logo!',
+    indisponibilidade: process.env.FALLBACK_MSG_INDISPONIBILIDADE
+      || 'O serviço está temporariamente indisponível. Por favor, tente novamente em instantes.',
   },
 };

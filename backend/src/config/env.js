@@ -12,6 +12,13 @@ const schema = z.object({
     .enum(['true', 'false'])
     .transform((v) => v === 'true')
     .default('true'),
+  // Autenticação interna entre serviços
+  INTERNAL_API_KEY: z.string().min(32),
+  // Parâmetros de memória de conversa
+  CONTEXT_MAX_TURNS: z.coerce.number().int().positive().default(5),
+  CONTEXT_MAX_CHARS: z.coerce.number().int().positive().default(8000),
+  CONVERSATION_RETENTION_HOURS: z.coerce.number().int().positive().default(168),
+  CONVERSATION_INACTIVITY_MINUTES: z.coerce.number().int().positive().default(30),
   // Token compartilhado para o endpoint /rag/search — requerido em produção
   RAG_INTERNAL_TOKEN: z.string().min(16, 'RAG_INTERNAL_TOKEN deve ter ao menos 16 caracteres'),
   // Número máximo de chunks retornados por busca RAG

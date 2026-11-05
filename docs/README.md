@@ -7,6 +7,7 @@ Documentação viva do projeto. Tudo que é decisão, plano, arquitetura ou cont
 - `user-stories.md` — user stories completas (12 USs em 5 épicos), com goals, escopo e critérios de aceite
 - `sprint-plan.md` — plano de 3 semanas para 3 pessoas, com agrupamento de USs por semana e por pessoa
 - `architecture.md` — visão de arquitetura, diagrama de componentes e fluxos principais
+- [`spec-memoria-conversa.md`](spec-memoria-conversa.md) — especificação da memória por ligação e persistência do histórico por sete dias, com expiração e exclusão automática
 - `contracts/` — contratos entre componentes:
   - `api-campanhas.md` — endpoints e schemas da API de campanhas
   - `agent-educational.md` — contrato de input/output do agente educacional

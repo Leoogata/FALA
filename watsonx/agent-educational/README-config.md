@@ -33,12 +33,14 @@ O formato esperado da saída é:
      "type": "object",
      "required": ["campanhaId", "confianca", "sem_rota"],
      "properties": {
-       "campanhaId": { "type": ["string", "null"] },
-       "confianca": { "type": "number" },
+       "campanhaId": { "type": "string", "enum": ["historia", "geografia", "portugues", "matematica", "ciencias"] },
+       "confianca": { "type": "number", "minimum": 0, "maximum": 1 },
        "sem_rota": { "type": "boolean" }
      }
    }
    ```
+
+O enum limita os IDs previstos pelo contrato; a campanha escolhida também deve estar na lista de campanhas ativas da entrada. Para perguntas ambíguas ou fora do escopo, o modelo ainda escolhe a matéria mais próxima e sinaliza `sem_rota: true`, para que o handler aplique o fallback. O esquema acima documenta o formato; por si só, não impõe restrições à geração no watsonx.
 
 ---
 

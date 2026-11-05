@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Contrato de I/O — Agentes Educacionais FALA",
-  "description": "Define as assinaturas de entrada e saída do orquestrador e dos subagentes educacionais watsonx.",
+  "description": "Define as assinaturas de entrada e saída do orquestrador e dos subagentes educacionais watsonx. Versão 2 — inclui histórico de conversa e esclarecimento.",
 
   "definitions": {
 
@@ -29,14 +29,43 @@
       "additionalProperties": false
     },
 
+    "HistoricoItem": {
+      "type": "object",
+      "description": "Troca anterior elegível da conversa, enviada como contexto para os agentes.",
+      "required": ["pergunta", "resposta", "materia", "status"],
+      "properties": {
+        "pergunta": {
+          "type": "string",
+          "description": "Transcrição sanitizada da pergunta anterior.",
+          "maxLength": 500
+        },
+        "resposta": {
+          "type": "string",
+          "description": "Texto da resposta ou esclarecimento anterior. Nunca usar como fonte de verdade.",
+          "maxLength": 1000
+        },
+        "materia": {
+          "type": ["string", "null"],
+          "description": "Matéria identificada naquele turno.",
+          "enum": ["historia", "geografia", "portugues", "matematica", "ciencias", null]
+        },
+        "status": {
+          "type": "string",
+          "description": "Status do turno: RESPONDIDO ou ESCLARECIMENTO.",
+          "enum": ["RESPONDIDO", "ESCLARECIMENTO"]
+        }
+      },
+      "additionalProperties": false
+    },
+
     "RouteQuestionInput": {
       "type": "object",
-      "description": "Entrada do agente orquestrador. Assinatura: orchestrator.routeQuestion({ pergunta, campanhasAtivas })",
+      "description": "Entrada do agente orquestrador. Assinatura: orchestrator.routeQuestion({ pergunta, campanhasAtivas, historico })",
       "required": ["pergunta", "campanhasAtivas"],
       "properties": {
         "pergunta": {
           "type": "string",
-          "description": "Texto transcrito da pergunta do aluno (SpeechResult do Twilio).",
+          "description": "Texto transcrito e sanitizado da pergunta do aluno.",
           "minLength": 1,
           "maxLength": 500
         },
@@ -45,6 +74,12 @@
           "description": "Lista de campanhas ativas no momento da chamada, obtida de GET /campanhas.",
           "items": { "$ref": "#/definitions/Campanha" },
           "minItems": 1
+        },
+        "historico": {
+          "type": "array",
+          "description": "Últimas trocas elegíveis da conversa (máx 5 trocas / 8.000 caracteres). Array vazio na primeira pergunta.",
+          "items": { "$ref": "#/definitions/HistoricoItem" },
+          "default": []
         }
       },
       "additionalProperties": false
@@ -53,12 +88,12 @@
     "RouteQuestionOutput": {
       "type": "object",
       "description": "Saída do agente orquestrador.",
-      "required": ["campanhaId", "confianca", "sem_rota"],
+      "required": ["campanhaId", "confianca", "sem_rota", "precisa_esclarecimento", "pergunta_esclarecimento"],
       "properties": {
         "campanhaId": {
-          "type": ["string", "null"],
-          "description": "ID da campanha identificada. null quando sem_rota for true.",
-          "enum": ["historia", "geografia", "portugues", "matematica", "ciencias", null]
+          "type": "string",
+          "description": "ID da campanha ativa mais próxima, inclusive quando sem_rota ou precisa_esclarecimento forem true.",
+          "enum": ["historia", "geografia", "portugues", "matematica", "ciencias"]
         },
         "confianca": {
           "type": "number",
@@ -68,7 +103,16 @@
         },
         "sem_rota": {
           "type": "boolean",
-          "description": "true quando a pergunta não se encaixa em nenhuma campanha ativa ou a confiança é insuficiente."
+          "description": "true quando a pergunta não se encaixa em nenhuma campanha ativa ou a confiança é insuficiente. Quando precisa_esclarecimento=true, sem_rota também deve ser true."
+        },
+        "precisa_esclarecimento": {
+          "type": "boolean",
+          "description": "true quando a referência na pergunta é ambígua e não pode ser resolvida pelo contexto. Nunca chamar o subagente nesse caso."
+        },
+        "pergunta_esclarecimento": {
+          "type": "string",
+          "description": "Pergunta curta para o aluno esclarecer a referência ambígua. Obrigatória quando precisa_esclarecimento=true. Máximo 300 caracteres. String vazia nos demais casos.",
+          "maxLength": 300
         }
       },
       "additionalProperties": false
@@ -76,7 +120,7 @@
 
     "AnswerQuestionInput": {
       "type": "object",
-      "description": "Entrada do subagente educacional. Assinatura: agentEducational.answerQuestion({ campanhaId, pergunta })",
+      "description": "Entrada do subagente educacional. Assinatura: agentEducational.answerQuestion({ campanhaId, pergunta, historico })",
       "required": ["campanhaId", "pergunta"],
       "properties": {
         "campanhaId": {
@@ -86,9 +130,15 @@
         },
         "pergunta": {
           "type": "string",
-          "description": "Texto da pergunta do aluno.",
+          "description": "Texto sanitizado da pergunta do aluno.",
           "minLength": 1,
           "maxLength": 500
+        },
+        "historico": {
+          "type": "array",
+          "description": "Últimas trocas elegíveis da conversa. O subagente usa para resolver referências, nunca como fonte de verdade.",
+          "items": { "$ref": "#/definitions/HistoricoItem" },
+          "default": []
         }
       },
       "additionalProperties": false
@@ -97,22 +147,31 @@
     "AnswerQuestionOutput": {
       "type": "object",
       "description": "Saída do subagente educacional.",
-      "required": ["resposta", "confianca", "sem_resposta"],
+      "required": ["resposta", "confianca", "sem_resposta", "precisa_esclarecimento", "pergunta_esclarecimento"],
       "properties": {
         "resposta": {
           "type": "string",
-          "description": "Texto da resposta para ser lido pelo TTS. Máximo 150 palavras. String vazia quando sem_resposta for true.",
+          "description": "Texto da resposta para ser lido pelo TTS. Máximo 150 palavras. String vazia quando sem_resposta ou precisa_esclarecimento forem true.",
           "maxLength": 1000
         },
         "confianca": {
           "type": "number",
-          "description": "Grau de confiança da resposta, entre 0.0 e 1.0. 0.0 quando sem_resposta for true.",
+          "description": "Grau de confiança da resposta, entre 0.0 e 1.0. 0.0 quando sem_resposta ou precisa_esclarecimento forem true.",
           "minimum": 0.0,
           "maximum": 1.0
         },
         "sem_resposta": {
           "type": "boolean",
-          "description": "true quando não há material validado para responder ou a pergunta está fora do escopo da matéria."
+          "description": "true quando não há material validado para responder, a pergunta está fora do escopo ou precisa_esclarecimento=true."
+        },
+        "precisa_esclarecimento": {
+          "type": "boolean",
+          "description": "true quando a referência continua ambígua após consultar o histórico. Implica resposta='', confianca=0, sem_resposta=true."
+        },
+        "pergunta_esclarecimento": {
+          "type": "string",
+          "description": "Pergunta curta para o aluno esclarecer a referência ambígua. Obrigatória quando precisa_esclarecimento=true. Máximo 300 caracteres. String vazia nos demais casos.",
+          "maxLength": 300
         }
       },
       "additionalProperties": false
@@ -159,7 +218,7 @@
         },
         "query": {
           "type": "string",
-          "description": "Texto da consulta para busca semântica."
+          "description": "Texto da consulta para busca semântica. Deve incorporar a referência resolvida pelo contexto."
         },
         "topK": {
           "type": "integer",
@@ -214,13 +273,13 @@
   "agents": {
 
     "orchestrator": {
-      "description": "Agente orquestrador — classifica a pergunta e devolve a campanha mais adequada.",
+      "description": "Agente orquestrador — classifica a pergunta, resolve referências pelo histórico e devolve a campanha mais adequada ou pede esclarecimento.",
       "input": { "$ref": "#/definitions/RouteQuestionInput" },
       "output": { "$ref": "#/definitions/RouteQuestionOutput" }
     },
 
     "agentEducational": {
-      "description": "Subagentes educacionais — um por matéria, todos com o mesmo contrato de I/O.",
+      "description": "Subagentes educacionais — um por matéria, todos com o mesmo contrato de I/O. Recebem histórico para resolver referências.",
       "campanhasSuportadas": ["historia", "geografia", "portugues", "matematica", "ciencias"],
       "input": { "$ref": "#/definitions/AnswerQuestionInput" },
       "output": { "$ref": "#/definitions/AnswerQuestionOutput" }
