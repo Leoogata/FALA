@@ -20,6 +20,29 @@ enum IndexacaoStatus {
   ERRO
 }
 
+enum ConversaEstado {
+  ATIVA
+  ENCERRADA
+  EXPIRADA
+}
+
+enum InteracaoStatus {
+  RECEBIDO
+  RESPONDIDO
+  ESCLARECIMENTO
+  SEM_ROTA
+  SEM_RESPOSTA
+  ERRO
+}
+
+enum Materia {
+  historia
+  geografia
+  portugues
+  matematica
+  ciencias
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,6 +58,7 @@ model Campanha {
   atualizadaEm DateTime   @updatedAt      @map("atualizada_em")
 
   documentos   Documento[]
+  interacoes   Interacao[]
 
   @@map("campanhas")
 }
@@ -54,4 +78,54 @@ model Documento {
   campanha         Campanha         @relation(fields: [campanhaId], references: [id], onDelete: Restrict)
 
   @@map("documentos")
+}
+
+model Conversa {
+  id                  String         @id @default(uuid()) @db.Uuid
+  chave_chamada       String         @unique @map("chave_chamada")
+  versao_chave        String         @map("versao_chave")
+  estado              ConversaEstado @default(ATIVA)
+  criada_em           DateTime       @default(now()) @db.Timestamptz @map("criada_em")
+  ultima_atividade_em DateTime       @default(now()) @db.Timestamptz @map("ultima_atividade_em")
+  encerrada_em        DateTime?      @db.Timestamptz @map("encerrada_em")
+  expira_em           DateTime       @db.Timestamptz @map("expira_em")
+
+  interacoes          Interacao[]
+
+  @@index([expira_em])
+  @@map("conversas")
+}
+
+model Interacao {
+  id                            String          @id @default(uuid()) @db.Uuid
+  conversa_id                   String          @db.Uuid @map("conversa_id")
+  turno_token                   String          @db.Uuid @unique @map("turno_token")
+  ordem                         Int
+  campanha_id                   String?         @map("campanha_id")
+  materia                       Materia?
+  pergunta                      String?         @db.VarChar(500)
+  resposta                      String?         @db.VarChar(1000)
+  mensagem_retorno              String?         @db.VarChar(1000) @map("mensagem_retorno")
+  status                        InteracaoStatus @default(RECEBIDO)
+  texto_suprimido               Boolean         @default(false) @map("texto_suprimido")
+  sem_resposta                  Boolean         @default(false) @map("sem_resposta")
+  score_confianca_stt           Decimal?        @db.Decimal(4,3) @map("score_confianca_stt")
+  score_confianca_orquestrador  Decimal?        @db.Decimal(4,3) @map("score_confianca_orquestrador")
+  score_confianca_agente        Decimal?        @db.Decimal(4,3) @map("score_confianca_agente")
+  duracao_ms                    Int?            @map("duracao_ms")
+  versao_prompt                 String?         @map("versao_prompt")
+  // Lease para controle de concorrência: execucao_id identifica quem detém o processamento
+  execucao_id                   String?         @db.Uuid @map("execucao_id")
+  lease_expira_em               DateTime?       @db.Timestamptz @map("lease_expira_em")
+  recebida_em                   DateTime        @default(now()) @db.Timestamptz @map("recebida_em")
+  concluida_em                  DateTime?       @db.Timestamptz @map("concluida_em")
+  expira_em                     DateTime        @db.Timestamptz @map("expira_em")
+
+  conversa   Conversa  @relation(fields: [conversa_id], references: [id], onDelete: Cascade)
+  campanha   Campanha? @relation(fields: [campanha_id], references: [id], onDelete: SetNull)
+
+  @@unique([conversa_id, ordem])
+  @@index([conversa_id, recebida_em])
+  @@index([expira_em])
+  @@map("interacoes")
 }

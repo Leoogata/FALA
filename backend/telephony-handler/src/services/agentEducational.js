@@ -39,17 +39,23 @@ function resolveAgentId(campanhaId) {
 /**
  * Chama o subagente educacional correspondente à campanhaId.
  *
- * @param {{ campanhaId: string, pergunta: string }} params
- * @returns {Promise<{ resposta: string, confianca: number, sem_resposta: boolean }>}
+ * @param {{ campanhaId: string, pergunta: string, historico?: Array }} params
+ * @returns {Promise<{
+ *   resposta: string,
+ *   confianca: number,
+ *   sem_resposta: boolean,
+ *   precisa_esclarecimento: boolean,
+ *   pergunta_esclarecimento: string
+ * }>}
  */
-async function answerQuestion({ campanhaId, pergunta }) {
+async function answerQuestion({ campanhaId, pergunta, historico = [] }) {
   const agentId = resolveAgentId(campanhaId);
   const token = await getIamToken();
 
   const payload = {
     parameters: {
       prompt_variables: {
-        input: JSON.stringify({ campanhaId, pergunta }),
+        input: JSON.stringify({ campanhaId, pergunta, historico }),
       },
     },
   };
@@ -67,7 +73,21 @@ async function answerQuestion({ campanhaId, pergunta }) {
 
   const raw = response.data?.results?.[0]?.generated_text ?? response.data;
   const result = parseModelResponse(raw);
-  if (typeof result.resposta !== 'string' || result.resposta.length > 1000 ||
+
+  const precisaEsclarecimento = result.precisa_esclarecimento === true;
+  const perguntaEsclarecimento = typeof result.pergunta_esclarecimento === 'string'
+    ? result.pergunta_esclarecimento.slice(0, 300)
+    : '';
+
+  // Quando precisa_esclarecimento, espera-se resposta vazia, confiança 0, sem_resposta true
+  if (precisaEsclarecimento) {
+    if (result.resposta !== '' || result.confianca !== 0 || result.sem_resposta !== true) {
+      throw new Error('Resposta inválida do subagente: precisa_esclarecimento requer resposta vazia');
+    }
+    if (!perguntaEsclarecimento) {
+      throw new Error('precisa_esclarecimento=true mas pergunta_esclarecimento ausente');
+    }
+  } else if (typeof result.resposta !== 'string' || result.resposta.length > 1000 ||
       !validConfidence(result.confianca) || typeof result.sem_resposta !== 'boolean' ||
       (result.sem_resposta ? result.resposta !== '' || result.confianca !== 0 : !result.resposta.trim())) {
     throw new Error('Resposta inválida do subagente educacional');
@@ -77,6 +97,8 @@ async function answerQuestion({ campanhaId, pergunta }) {
     resposta: result.resposta,
     confianca: result.confianca,
     sem_resposta: result.sem_resposta,
+    precisa_esclarecimento: precisaEsclarecimento,
+    pergunta_esclarecimento: perguntaEsclarecimento,
   };
 }
 

@@ -36,7 +36,7 @@ describe('clientes de implantações watsonx', () => {
     await expect(routeQuestion({
       pergunta: 'Qual é a capital do Brasil?',
       campanhasAtivas: [{ campanhaId: 'geografia' }],
-    })).resolves.toEqual({ campanhaId: 'geografia', confianca: 0.91, sem_rota: false });
+    })).resolves.toMatchObject({ campanhaId: 'geografia', confianca: 0.91, sem_rota: false });
 
     expect(axios.post).toHaveBeenNthCalledWith(
       2,
@@ -47,6 +47,7 @@ describe('clientes de implantações watsonx', () => {
             input: JSON.stringify({
               pergunta: 'Qual é a capital do Brasil?',
               campanhasAtivas: [{ campanhaId: 'geografia' }],
+              historico: [],
             }),
           },
         },
@@ -69,7 +70,7 @@ describe('clientes de implantações watsonx', () => {
     await expect(answerQuestion({
       campanhaId: 'geografia',
       pergunta: 'Qual é a capital do Brasil?',
-    })).resolves.toEqual({ resposta: 'Brasília.', confianca: 0.9, sem_resposta: false });
+    })).resolves.toMatchObject({ resposta: 'Brasília.', confianca: 0.9, sem_resposta: false });
 
     expect(axios.post).toHaveBeenNthCalledWith(
       2,
@@ -80,6 +81,7 @@ describe('clientes de implantações watsonx', () => {
             input: JSON.stringify({
               campanhaId: 'geografia',
               pergunta: 'Qual é a capital do Brasil?',
+              historico: [],
             }),
           },
         },
@@ -95,7 +97,7 @@ describe('clientes de implantações watsonx', () => {
       .mockResolvedValueOnce({ data: { results: [{ generated_text: bareWithPreamble }] } });
 
     await expect(answerQuestion({ campanhaId: 'geografia', pergunta: 'Capital?' }))
-      .resolves.toEqual({ resposta: 'Brasília', confianca: 1.0, sem_resposta: false });
+      .resolves.toMatchObject({ resposta: 'Brasília', confianca: 1.0, sem_resposta: false });
   });
 
   test('aceita JSON repetido antes de uma fence', async () => {
@@ -106,7 +108,7 @@ describe('clientes de implantações watsonx', () => {
       .mockResolvedValueOnce({ data: { results: [{ generated_text: duplicated }] } });
 
     await expect(answerQuestion({ campanhaId: 'geografia', pergunta: 'Capital?' }))
-      .resolves.toEqual({ resposta: 'Brasília', confianca: 1.0, sem_resposta: false });
+      .resolves.toMatchObject({ resposta: 'Brasília', confianca: 1.0, sem_resposta: false });
   });
 
   test('extrai a primeira resposta antes de uma nova entrada gerada pelo modelo', async () => {
@@ -114,7 +116,7 @@ describe('clientes de implantações watsonx', () => {
     axios.post.mockResolvedValueOnce({ data: { access_token: 'iam-token' } })
       .mockResolvedValueOnce({ data: { results: [{ generated_text: raw }] } });
     await expect(answerQuestion({ campanhaId: 'geografia', pergunta: 'São João?' }))
-      .resolves.toEqual({ resposta: 'O dia São João é comemorado em 24 de Junho.', confianca: 1, sem_resposta: false });
+      .resolves.toMatchObject({ resposta: 'O dia São João é comemorado em 24 de Junho.', confianca: 1, sem_resposta: false });
   });
 
   test('respeita chaves e aspas escapadas em strings e objetos aninhados', async () => {
@@ -122,14 +124,14 @@ describe('clientes de implantações watsonx', () => {
     axios.post.mockResolvedValueOnce({ data: { access_token: 'iam-token' } })
       .mockResolvedValueOnce({ data: { results: [{ generated_text: `Texto ${JSON.stringify(response)} depois {"outro":true}` }] } });
     await expect(answerQuestion({ campanhaId: 'geografia', pergunta: 'Pergunta' }))
-      .resolves.toEqual({ resposta: response.resposta, confianca: 0.9, sem_resposta: false });
+      .resolves.toMatchObject({ resposta: response.resposta, confianca: 0.9, sem_resposta: false });
   });
 
   test('tenta outro objeto quando o primeiro não é JSON válido', async () => {
     axios.post.mockResolvedValueOnce({ data: { access_token: 'iam-token' } })
       .mockResolvedValueOnce({ data: { results: [{ generated_text: '{inválido} {"resposta":"Brasília","confianca":1,"sem_resposta":false}' }] } });
     await expect(answerQuestion({ campanhaId: 'geografia', pergunta: 'Capital?' }))
-      .resolves.toEqual({ resposta: 'Brasília', confianca: 1, sem_resposta: false });
+      .resolves.toMatchObject({ resposta: 'Brasília', confianca: 1, sem_resposta: false });
   });
 
   test.each([

@@ -28,16 +28,22 @@ async function getIamToken() {
 /**
  * Chama o agente orquestrador watsonx para identificar a campanha da pergunta.
  *
- * @param {{ pergunta: string, campanhasAtivas: Array }} params
- * @returns {Promise<{ campanhaId: string, confianca: number, sem_rota: boolean }>}
+ * @param {{ pergunta: string, campanhasAtivas: Array, historico?: Array }} params
+ * @returns {Promise<{
+ *   campanhaId: string,
+ *   confianca: number,
+ *   sem_rota: boolean,
+ *   precisa_esclarecimento: boolean,
+ *   pergunta_esclarecimento: string
+ * }>}
  */
-async function routeQuestion({ pergunta, campanhasAtivas }) {
+async function routeQuestion({ pergunta, campanhasAtivas, historico = [] }) {
   const token = await getIamToken();
 
   const payload = {
     parameters: {
       prompt_variables: {
-        input: JSON.stringify({ pergunta, campanhasAtivas }),
+        input: JSON.stringify({ pergunta, campanhasAtivas, historico }),
       },
     },
   };
@@ -60,6 +66,16 @@ async function routeQuestion({ pergunta, campanhasAtivas }) {
     throw new Error('Resposta inválida do orquestrador');
   }
 
+  // Validar campos de esclarecimento (novos campos com retrocompatibilidade)
+  const precisaEsclarecimento = result.precisa_esclarecimento === true;
+  const perguntaEsclarecimento = typeof result.pergunta_esclarecimento === 'string'
+    ? result.pergunta_esclarecimento.slice(0, 300)
+    : '';
+
+  if (precisaEsclarecimento && !perguntaEsclarecimento) {
+    throw new Error('precisa_esclarecimento=true mas pergunta_esclarecimento ausente');
+  }
+
   if (!CAMPANHAS_SUPORTADAS.has(result?.campanhaId) ||
       !campanhasAtivas.some((campanha) => campanha.campanhaId === result.campanhaId)) {
     throw new Error('O orquestrador retornou um ID de campanha inválido ou inativo');
@@ -69,6 +85,8 @@ async function routeQuestion({ pergunta, campanhasAtivas }) {
     campanhaId: result.campanhaId,
     confianca: result.confianca,
     sem_rota: result.sem_rota,
+    precisa_esclarecimento: precisaEsclarecimento,
+    pergunta_esclarecimento: perguntaEsclarecimento,
   };
 }
 
