@@ -12,7 +12,7 @@ Cada arquivo `.json` representa um caso de teste com:
 
 ## Como executar
 
-Os casos de teste são executados manualmente no watsonx Studio durante a fase de validação de roteamento. Quando a integração do handler estiver pronta (ST-3), podem ser usados como fixtures nos testes automatizados.
+Os casos de teste são executados manualmente no watsonx Studio durante a fase de validação de roteamento. Os testes automatizados dos clientes e do handler já estão em `backend/telephony-handler/tests`. Os exemplos JSON desta pasta devem ser usados junto do schema atual: conferir também os campos de esclarecimento e cenários com histórico.
 
 ## Casos incluídos
 

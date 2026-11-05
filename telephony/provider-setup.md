@@ -1,110 +1,40 @@
-# telephony/provider-setup.md — Configuração do Twilio
+# Configuração de telefonia exigida pelo handler
 
-## Visão geral
+Este guia registra os pontos que precisam estar configurados no ambiente. Confira as opções disponíveis na conta do provedor; a publicação não foi verificada nesta revisão.
 
-Este documento descreve o passo a passo para provisionar o número Twilio e apontar os webhooks para o `backend/telephony-handler`. O Twilio é responsável apenas pelo transporte de voz e pelo reconhecimento de fala (STT nativo via `<Gather input="speech">`); toda a lógica de negócio permanece no handler.
+## Serviços e variáveis
 
----
+1. Preparar a API principal e o banco conforme o [guia do backend](../backend/README.md).
+2. Configurar o [serviço de voz](../backend/telephony-handler/README.md) a partir de [`.env.example`](../backend/telephony-handler/.env.example).
+3. Preencher os dados Twilio: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` e `TWILIO_PHONE_NUMBER`.
+4. Conferir `BACKEND_API_URL`, `INTERNAL_API_KEY` compartilhada com a API, `HMAC_SECRET` e `HMAC_SECRET_VERSION`.
+5. Preencher os IDs dos seis deployments e a chave IBM. As instruções estão no [guia dos agentes](../watsonx/agent-educational/README-config.md).
+6. Para contexto de documentos, manter `RAG_INTERNAL_TOKEN` igual nos dois serviços. O cliente vetorial remoto continua pendente.
 
-## 1. Criar conta Twilio
+## Webhooks
 
-1. Acesse [https://www.twilio.com/try-twilio](https://www.twilio.com/try-twilio) e registre-se.
-2. Após confirmar o e-mail, acesse o **Console** em `https://console.twilio.com`.
-3. Anote os valores na seção **Account Info**:
-   - `TWILIO_ACCOUNT_SID` — começa com `AC…`
-   - `TWILIO_AUTH_TOKEN` — chave secreta, nunca versionar
+Expor o handler por uma URL HTTPS acessível ao provedor e configurar:
 
-> **Conta trial:** limita o uso a números verificados, adiciona uma locução de aviso no início de cada chamada e possui cota de minutos. Use apenas para validação técnica. Para atender alunos reais, converta a conta para paga.
+| Evento | Destino | Método |
+| --- | --- | --- |
+| Entrada da chamada | `https://<dominio>/voice/incoming` | POST |
+| Captura de pergunta | URL emitida no TwiML: `/voice/turn?turno_token=...` | POST |
+| Término da chamada | `https://<dominio>/voice/status` | POST |
 
----
+O token de captura é emitido pelo servidor; não deve ser fixado manualmente no console. A assinatura usa a URL pública completa, incluindo protocolo, host, path e query. O proxy precisa preservar os dados utilizados por `twilioValidation.js`.
 
-## 2. Provisionar número de telefone
+## Áudio
 
-1. No Console, acesse **Phone Numbers → Manage → Buy a number**.
-2. Selecione país **Brazil (+55)** e tipo **Voice**.
-3. Escolha um número local (DDD da região do projeto) para reduzir custo de plataforma.
-   - O número 0800 envolve operadora parceira, documentação e prazo — é uma meta pós-MVP.
-4. Clique em **Buy** e confirme.
-5. Anote o número adquirido em `TWILIO_PHONE_NUMBER` (formato E.164, ex: `+5511900000000`).
+Sem a integração ElevenLabs, o TwiML usa `<Say>`/Polly. Para habilitar áudio gerado, configurar `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID` e `PUBLIC_URL`.
 
----
+`PUBLIC_URL` precisa permitir acesso a `/audio/:id` no handler. O buffer de áudio dinâmico é temporário e consumido na primeira leitura; mensagens fixas são mantidas no cache do processo.
 
-## 3. Configurar webhooks no número
+## Validação do ambiente
 
-1. No Console, acesse **Phone Numbers → Manage → Active numbers** e clique no número.
-2. Na seção **Voice & Fax → A CALL COMES IN**, configure:
-   - Tipo: **Webhook**
-   - URL: `https://<seu-domínio>/voice/incoming`
-   - Método: **HTTP POST**
-3. Salve.
+- Verificar `/health`, assinatura e chegada ao webhook de entrada.
+- Fazer uma pergunta, continuar o assunto, mudar de matéria e responder a um pedido de esclarecimento.
+- Confirmar os turnos no banco e a chegada do callback de término.
+- Exercitar ausência de fala e falhas de banco, RAG e áudio.
+- Medir o tempo total em ligação real.
 
-> O handler valida a assinatura Twilio em todas as rotas. Certifique-se de que a URL pública usada na configuração do número é exatamente igual à usada na validação (`X-Twilio-Signature`), incluindo protocolo e path.
-
----
-
-## 4. Expor o handler publicamente (desenvolvimento local)
-
-Para testes locais, use **ngrok** ou equivalente:
-
-```bash
-ngrok http 3000
-# Copie a URL HTTPS gerada (ex: https://xxxx.ngrok.io) e use-a no passo 3
-```
-
-Em produção, use HTTPS com certificado válido (o Twilio rejeita HTTP em produção).
-
----
-
-## 5. Variáveis de ambiente
-
-Adicione ao `.env` do `backend/telephony-handler`:
-
-```env
-# Twilio
-TWILIO_ACCOUNT_SID=YOUR_TWILIO_ACCOUNT_SID
-TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_PHONE_NUMBER=+5511900000000
-
-# Backend API e controles de voz
-BACKEND_API_URL=https://<url-do-backend-api>
-TWILIO_STT_CONFIDENCE_THRESHOLD=0.6
-VOICE_MAX_RETRIES=2
-
-# watsonx Agent Educacional
-WATSONX_AGENT_EDUCATIONAL_ID=
-WATSONX_API_KEY=
-WATSONX_PROJECT_ID=
-ORCHESTRATOR_CONFIDENCE_THRESHOLD=0.5
-
-# Backend Analytics (US-09)
-ANALYTICS_SERVICE_URL=https://<url-do-analytics>
-```
-
----
-
-## 6. SIDs e IDs necessários
-
-| Variável | Onde encontrar |
-|----------|---------------|
-| `TWILIO_ACCOUNT_SID` | Console → Account Info |
-| `TWILIO_AUTH_TOKEN` | Console → Account Info |
-| `TWILIO_PHONE_NUMBER` | Console → Phone Numbers → Active numbers |
-
----
-
-## 7. Limitações do trial
-
-| Limitação | Detalhe |
-|-----------|---------|
-| Locução automática | Toda chamada inicia com aviso "This call was made from a Twilio trial account" |
-| Números destino | Só pode receber chamadas de números verificados em **Verified Caller IDs** |
-| Cota de minutos | Limitada; verifique no Console em **Billing → Overview** |
-| Uso público | **Não adequado** para alunos reais — requer conta paga |
-
----
-
-## 8. Próximos passos após validação técnica
-
-- Converter conta trial para paga (Upgrade na página de billing do Console).
-- Avaliar contratação de número 0800 via operadora parceira Twilio Brasil para isentar o aluno do custo da ligação.
-- Configurar alertas de custo no Console (**Billing → Alerts**).
+Os detalhes dos payloads estão no [contrato](webhook-contract.md). Homologação e configuração externa continuam no [backlog](../docs/pendencias.md), sem presumir que já foram concluídas.

@@ -13,9 +13,9 @@ const config = require('../config');
  */
 function registrarInteracao(payload) {
   axios
-    .post(`${config.analyticsServiceUrl}/interacoes`, payload, { timeout: 5000 })
+    .post(`${config.analyticsServiceUrl || config.backendApiUrl}/interacoes`, payload, { timeout: 5000, headers: { Authorization: `Bearer ${config.internalApiKey}` } })
     .catch((err) => {
-      console.error('[analytics] Falha ao registrar interação:', err.message, { call_sid: payload.call_sid });
+      console.error('[analytics] Falha ao registrar interação:', err.message);
     });
 }
 

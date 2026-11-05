@@ -7,7 +7,6 @@ import conversasRouter from './conversas.routes.js';
 import interacoesRouter from './interacoes.routes.js';
 import instrucoesRouter from './instrucoes.routes.js';
 import testarRouter from './testar.routes.js';
-import interacoesRouter from './interacoes.routes.js';
 import analyticsRouter from './analytics.routes.js';
 import ragRouter from './rag.routes.js';
 
@@ -32,6 +31,5 @@ router.use('/rag', ragRouter);
 
 // Endpoints internos de memória de conversa (US-08/US-09)
 router.use('/internal/conversas', conversasRouter);
-router.use('/interacoes', interacoesRouter);
 
 export default router;

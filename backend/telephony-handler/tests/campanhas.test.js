@@ -17,7 +17,7 @@ test('adapta as campanhas da API e consulta apenas as ativas', async () => {
     { id: 'cm123', campanhaId: 'portugues', nome: ' Língua Portuguesa ', descricao: 'Gramática' },
     { id: 'cm456', campanhaId: 'matematica', nome: 'Matemática', descricao: 'Operações' },
   ]);
-  expect(axios.get).toHaveBeenCalledWith('http://backend.test/campanhas', {
+  expect(axios.get).toHaveBeenCalledWith('http://backend.test/campanhas/ativas', {
     timeout: 5000, params: { ativa: true },
   });
 });
@@ -42,4 +42,14 @@ test('recusa duas campanhas ativas para a mesma matéria', async () => {
 test('recusa lista sem matéria ativa reconhecida', async () => {
   axios.get.mockResolvedValue({ data: [{ id: '1', nome: 'Matemática', ativa: false }] });
   await expect(getCampanhasAtivas()).rejects.toThrow('Nenhuma campanha ativa');
+});
+
+
+test('usa campanhaId da API com nome de turma personalizado', async () => {
+  axios.get.mockResolvedValue({ data: [
+    { id: 'cmp-real', campanhaId: 'matematica', nome: 'Álgebra do nono ano', descricao: 'Álgebra' },
+  ] });
+  await expect(getCampanhasAtivas()).resolves.toEqual([
+    { id: 'cmp-real', campanhaId: 'matematica', nome: 'Álgebra do nono ano', descricao: 'Álgebra' },
+  ]);
 });

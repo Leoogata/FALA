@@ -155,8 +155,7 @@ async function turnHandler(req, res) {
     : (perguntaSanitizada || '');
 
   // ── Roteamento ────────────────────────────────────────────────────────────
-  // Cronômetro — mede quanto cada etapa demora (diagnóstico de latência)
-  const t0 = Date.now();
+  // Mede a latência sem registrar transcrições ou identificadores do provedor.
   const ms = (desde) => `${Date.now() - desde}ms`;
 
   // --- Roteamento ---
@@ -167,8 +166,8 @@ async function turnHandler(req, res) {
   const tRota = Date.now();
   try {
     campanhasAtivas = await campanhas.getCampanhasAtivas();
-    routeResult = await orchestrator.routeQuestion({ pergunta: speechResult, campanhasAtivas });
-    console.info(`[latencia] roteamento=${ms(tRota)}`, { callSid });
+    routeResult = await orchestrator.routeQuestion({ pergunta: perguntaParaModelo, campanhasAtivas, historico });
+    console.info(`[latencia] roteamento=${ms(tRota)}`, { conversaId });
   } catch (err) {
     console.error('[turn] Erro no roteamento:', err.message);
     try {
@@ -238,8 +237,7 @@ async function turnHandler(req, res) {
       pergunta: perguntaParaModelo,
       historico,
     });
-    agentResult = await agentEducational.answerQuestion({ campanhaId, pergunta: speechResult });
-    console.info(`[latencia] subagente=${ms(tAgente)}`, { callSid });
+    console.info(`[latencia] subagente=${ms(tAgente)}`, { conversaId });
   } catch (err) {
     console.error('[turn] Erro no subagente:', err.message);
     agentResult = { resposta: '', confianca: 0, sem_resposta: true, precisa_esclarecimento: false, pergunta_esclarecimento: '' };
@@ -304,7 +302,8 @@ async function turnHandler(req, res) {
     }
     const proximoToken = randomUUID();
     session.setTurnoToken(callSid, proximoToken);
-    return res.type('text/xml').send(twiml.buildNoAnswerTwiml(proximoToken));
+    const audioUrl = await gerarAudio(config.fallbackMessages.semResposta);
+    return res.type('text/xml').send(twiml.buildNoAnswerTwiml(proximoToken, audioUrl));
   }
 
   const { texto: respostaSanitizada, suprimido: respostaSuprimida } = sanitizar(resposta);
@@ -331,7 +330,17 @@ async function turnHandler(req, res) {
 
   const proximoToken = randomUUID();
   session.setTurnoToken(callSid, proximoToken);
-  return res.type('text/xml').send(twiml.buildAnswerTwiml(mensagemFinal, proximoToken));
+  const audioUrl = await gerarAudio(mensagemFinal);
+  return res.type('text/xml').send(twiml.buildAnswerTwiml(mensagemFinal, proximoToken, audioUrl));
+}
+
+// Falha na geração de áudio não altera o turno já persistido.
+async function gerarAudio(texto) {
+  try {
+    return await tts.textoParaAudioUrl(texto) || null;
+  } catch (_) {
+    return null;
+  }
 }
 
 // ── Helpers de finalização ─────────────────────────────────────────────────
@@ -414,24 +423,7 @@ async function _finalizarEsclarecimento({ conversaId, turnoToken, campanhaRealId
     score_confianca_orquestrador: scoreConfiancaOrquestrador ?? null,
     duracao_ms: duracaoMs,
   });
-  // --- Geração de áudio ElevenLabs (best-effort, fallback para Polly) ---
-  const textoParaFalar = sem_resposta ? config.fallbackMessages.semResposta : resposta;
-  const tTts = Date.now();
-  const audioUrl = await tts.textoParaAudioUrl(textoParaFalar);
-  console.info(`[latencia] tts=${ms(tTts)} | TOTAL=${ms(t0)}`, { callSid });
 
-  if (audioUrl) {
-    console.info(`[turn] TTS ElevenLabs OK: ${audioUrl}`, { callSid });
-  } else {
-    console.info('[turn] TTS ElevenLabs indisponível — usando Polly', { callSid });
-  }
-
-  // --- TwiML de resposta ---
-  if (sem_resposta) {
-    return res.type('text/xml').send(twiml.buildNoAnswerTwiml(audioUrl));
-  }
-
-  return res.type('text/xml').send(twiml.buildAnswerTwiml(resposta, audioUrl));
 }
 
 module.exports = turnHandler;

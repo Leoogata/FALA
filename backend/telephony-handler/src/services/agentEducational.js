@@ -99,7 +99,7 @@ async function answerQuestion({ campanhaId, pergunta, historico = [] }) {
   const payload = {
     parameters: {
       prompt_variables: {
-        input: JSON.stringify({ campanhaId, pergunta: perguntaComContexto }),
+        input: JSON.stringify({ campanhaId, pergunta: perguntaComContexto, historico }),
       },
     },
   };
@@ -135,12 +135,6 @@ async function answerQuestion({ campanhaId, pergunta, historico = [] }) {
       !validConfidence(result.confianca) || typeof result.sem_resposta !== 'boolean' ||
       (result.sem_resposta ? result.resposta !== '' || result.confianca !== 0 : !result.resposta.trim())) {
     throw new Error('Resposta inválida do subagente educacional');
-  const raw = response.data?.results?.[0]?.generated_text || response.data;
-  const result = typeof raw === 'string' ? extractJson(raw) : raw;
-
-  if (!result) {
-    console.warn(`[agentEducational] Não foi possível extrair JSON da resposta: ${String(raw).slice(0, 200)}`);
-    return { resposta: '', confianca: 0, sem_resposta: true };
   }
 
   return {
@@ -150,27 +144,6 @@ async function answerQuestion({ campanhaId, pergunta, historico = [] }) {
     precisa_esclarecimento: precisaEsclarecimento,
     pergunta_esclarecimento: perguntaEsclarecimento,
   };
-}
-
-/**
- * Extrai o primeiro objeto JSON VÁLIDO de uma string que pode conter prosa,
- * cercas de código, ou o mesmo objeto repetido/truncado. Varre candidatos
- * { ... } e retorna o primeiro que parseia e contém a chave `resposta`.
- */
-function extractJson(texto) {
-  const semCercas = String(texto).replace(/```(?:json)?/gi, '');
-  for (let i = 0; i < semCercas.length; i++) {
-    if (semCercas[i] !== '{') continue;
-    for (let j = semCercas.lastIndexOf('}'); j > i; j = semCercas.lastIndexOf('}', j - 1)) {
-      try {
-        const obj = JSON.parse(semCercas.slice(i, j + 1));
-        if (obj && typeof obj === 'object' && 'resposta' in obj) return obj;
-      } catch {
-        // tenta um '}' anterior
-      }
-    }
-  }
-  return null;
 }
 
 module.exports = { answerQuestion, resolveAgentId, fetchRagContext };

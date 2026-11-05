@@ -1,44 +1,22 @@
-# watsonx/agent-educational — Agente Educacional
+# Agentes educacionais
 
-**Responsável pela US-08-agent.**
+O fluxo usa um orquestrador e cinco subagentes: História, Geografia, Português, Matemática e Ciências. São chamados pelo serviço de voz usando IDs de deployments configurados no ambiente.
 
-Configuração do agente que responde às dúvidas dos alunos durante a ligação. Usa RAG apontando para o índice da campanha ativa.
+## Contrato atual
 
-## O que faz
+- Orquestrador: recebe `{ pergunta, campanhasAtivas, historico }` e devolve matéria, confiança, ausência de rota e eventual pedido de esclarecimento.
+- Subagente: recebe `{ campanhaId, pergunta, historico }`. O cliente pode enriquecer a pergunta com trechos recuperados pelo RAG.
+- Saída educacional: `resposta`, `confianca`, `sem_resposta`, `precisa_esclarecimento` e `pergunta_esclarecimento`.
 
-- Recebe `{ pergunta, campanha_id }` do handler de voz
-- Faz retrieval no índice RAG da campanha (indexado por `backend/rag-pipeline`)
-- Gera resposta usando o conteúdo recuperado
-- Retorna `{ resposta, confianca, sem_resposta }` — se não há conteúdo adequado, retorna `sem_resposta: true` em vez de alucinar
+O histórico contém perguntas e respostas anteriores. Ele serve para resolver referências, não como fonte didática nem como instrução de sistema. O agente deve acompanhar mudanças de assunto e pedir esclarecimento se a referência continuar ambígua.
 
-## O que precisa estar aqui
+A regra dos prompts exige material validado para responder. O cliente vetorial remoto ainda não está implementado no backend; essa integração é uma pendência, não uma capacidade comprovada dos deployments atuais.
 
-- `system-prompt.md` — system prompt do agente (linguagem acessível para EF/EM)
-- `schema.json` — schema de input/output (contrato que o handler consome)
-- `test-cases/` — exemplos de perguntas (dentro e fora do escopo) para testar comportamento
-- `README-config.md` — passo a passo de como configurar o agente no watsonx studio
-- Documentação do comportamento de baixa confiança
+## Arquivos necessários
 
-## O que NÃO deve estar aqui
+- [system-prompt.md](system-prompt.md): conteúdo por agente.
+- [schema.json](schema.json): contrato de entrada e saída.
+- [README-config.md](README-config.md): configuração e validação dos deployments.
+- [test-cases](test-cases/README.md): exemplos para validação de comportamento.
 
-- Código do handler de voz (isso é `backend/telephony-handler`)
-- Lógica de indexação RAG (isso é `backend/rag-pipeline`)
-- Qualquer coisa relacionada a STT ou TTS
-
-## Comportamento esperado
-
-- Linguagem adequada para alunos de ensino fundamental e médio
-- Nunca inventa resposta — se não tem contexto suficiente, retorna `sem_resposta: true`
-- Respostas curtas (preferencialmente < 30s de áudio quando lidas pelo TTS)
-
-## Como fala com os outros módulos
-
-- Consumido pelo **backend/telephony-handler** a cada turno de ligação
-- Consulta o índice RAG mantido pela **backend/rag-pipeline**
-
-## Testes
-
-Antes de considerar pronto, testar com perguntas:
-1. Dentro do conteúdo indexado — deve responder corretamente
-2. Fora do conteúdo — deve retornar `sem_resposta: true`
-3. Ambígua — deve pedir mais contexto ou admitir que não sabe
+Os testes dos clientes estão em `backend/telephony-handler/tests/watsonx-services.test.js`. A publicação e o teste real na IBM continuam sujeitos à [validação do ambiente](../../docs/pendencias.md#3-publicar-e-validar-os-agentes-e-a-telefonia).

@@ -1,44 +1,23 @@
-# backend/rag-pipeline — Pipeline de Indexação RAG
+# Pipeline de documentos e RAG
 
-**Responsável pela US-05.**
+A implementação está em [backend/src/rag](../src/rag), no processo da API.
 
-Pipeline que recebe um documento recém-uploadado, faz chunking, gera embeddings e indexa no watsonx associado a uma campanha. Garante que cada campanha tenha seu índice RAG isolado.
+## Funcionamento atual
 
-## O que faz
+1. O upload cria o registro do documento e enfileira seu processamento.
+2. O pipeline extrai TXT/PDF; extração insuficiente em PDF pode acionar OCR.
+3. `chunker.js` divide o texto usando `CHUNK_SIZE` e `CHUNK_OVERLAP`, medidos por caracteres.
+4. `watsonxClient.indexChunks` recebe o ID real da campanha e os chunks identificados por documento e ordem.
+5. O documento passa a `PRONTO` ou `ERRO`. Limpezas tentam remover indexação parcial e dados de documentos excluídos.
 
-- Escuta eventos de upload da `backend/api`
-- Faz chunking do documento com tamanho e overlap configuráveis
-- Gera embeddings e indexa no watsonx
-- Marca cada chunk com `campanha_id` para isolamento
-- Atualiza o status de indexação do documento (`processando` → `pronto` | `erro`)
-- Remove chunks de um documento quando ele é deletado
+A fila é em memória. Na inicialização, a recuperação marca documentos antigos presos em `PROCESSANDO` como erro. Isso não é uma fila durável nem reindexação automática de todo o material.
 
-## O que precisa estar aqui
+## Armazenamento
 
-- Worker/consumer da fila de documentos
-- Lógica de chunking (texto e PDF)
-- Cliente do watsonx para embeddings e indexação
-- Lógica de isolamento por campanha (metadata `campanha_id` em cada chunk)
-- Mecanismo de atualização de status consultável via API
-- Testes do pipeline com documentos de exemplo
+Com `WATSONX_MOCK=true`, indexação, busca e remoção usam um índice em memória. Reiniciar a API perde esse índice. A versão remota (`realClient`) ainda precisa ser implementada.
 
-## O que NÃO deve estar aqui
+`GET /rag/search` autentica com `RAG_INTERNAL_TOKEN`, resolve ID/slug da campanha para seu ID real e consulta o cliente. O serviço de voz usa os textos retornados para enriquecer a pergunta.
 
-- Endpoints HTTP de CRUD de campanhas (isso é `backend/api`)
-- Lógica de resposta do agente (isso é `watsonx/agent-educational`)
-- UI (nada aqui tem interface)
-
-## Como fala com os outros módulos
-
-- **backend/api** dispara o pipeline no upload e consulta o status
-- **watsonx/agent-educational** consome o índice gerado aqui durante a inferência
-
-## Decisões técnicas em aberto
-
-- Fila: SQS? Redis? processamento síncrono para o MVP?
-- Chunker: fixo (ex.: 500 tokens com 50 de overlap) ou adaptativo?
-- Formato de persistência dos chunks: vetorial próprio do watsonx ou externo?
-
-## Setup
-
-A ser preenchido quando as escolhas acima estiverem feitas.
+- [Contrato do cliente](../../docs/contracts/watsonx-client.md).
+- [Trabalho restante do RAG](../../docs/pendencias.md#2-implementar-o-rag-remoto).
+- [Instalação, variáveis e Docker](../README.md).

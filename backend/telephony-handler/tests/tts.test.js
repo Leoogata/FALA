@@ -27,13 +27,13 @@ describe('tts.textoParaAudioUrl — fluxo feliz', () => {
     expect(axios.post.mock.calls[0][0]).toContain('voice-test-id');
   });
 
-  it('envia model_id eleven_multilingual_v4 e o texto correto', async () => {
+  it('envia model_id eleven_multilingual_v2 e o texto correto', async () => {
     axios.post.mockResolvedValueOnce({ data: AUDIO_BUFFER.buffer });
 
     await textoParaAudioUrl('Texto de teste');
 
     const payload = axios.post.mock.calls[0][1];
-    expect(payload.model_id).toBe('eleven_multilingual_v4');
+    expect(payload.model_id).toBe('eleven_multilingual_v2');
     expect(payload.text).toBe('Texto de teste');
   });
 

@@ -6,13 +6,11 @@ import {
   postConversa,
   getContexto,
   postTurno,
-  postInteracao,
   patchConversa,
 } from '../controllers/conversas.controller.js';
 import {
   criarConversaSchema,
   reservarTurnoSchema,
-  concluirTurnoSchema,
   encerrarConversaSchema,
 } from '../schemas/conversa.schema.js';
 
@@ -29,7 +27,7 @@ router.use(internalAuth);
  *     tags: [Conversas]
  *     security: [{ bearerAuth: [] }]
  */
-router.post('/', validate(criarConversaSchema), postConversa);
+router.post('/', validate({ body: criarConversaSchema }), postConversa);
 
 /**
  * @openapi
@@ -49,7 +47,7 @@ router.get('/:id/contexto', getContexto);
  *     tags: [Conversas]
  *     security: [{ bearerAuth: [] }]
  */
-router.post('/:id/turnos', validate(reservarTurnoSchema), postTurno);
+router.post('/:id/turnos', validate({ body: reservarTurnoSchema }), postTurno);
 
 /**
  * @openapi
@@ -59,6 +57,6 @@ router.post('/:id/turnos', validate(reservarTurnoSchema), postTurno);
  *     tags: [Conversas]
  *     security: [{ bearerAuth: [] }]
  */
-router.patch('/:id', validate(encerrarConversaSchema), patchConversa);
+router.patch('/:id', validate({ body: encerrarConversaSchema }), patchConversa);
 
 export default router;

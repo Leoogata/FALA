@@ -1,44 +1,29 @@
 # FALA — Projeto Ponte
 
-Repositório da eletiva IBM com Bob · Grupo FALA · Trilha 3 (Fundação Telefônica)
+Plataforma de apoio educacional por telefone. O aluno faz uma pergunta em voz e o sistema identifica a matéria, consulta o agente educacional e devolve áudio. O aluno pode continuar o assunto na mesma ligação.
 
-**Ponte** é uma plataforma que leva ensino a estudantes de regiões sensíveis via chamada telefônica. O aluno liga, escolhe uma campanha, faz uma pergunta de voz, e um agente de IA com RAG responde em áudio — tudo sem precisar de internet no lado do aluno.
+## Estado atual
 
-## Arquitetura em uma frase
+O repositório contém painel web, API de campanhas e documentos, handler de voz, clientes dos agentes IBM, memória de conversa e endpoints de analytics. A integração RAG do backend ainda usa um cliente simulado; a versão remota precisa ser implementada. A atualização do banco real e a configuração dos serviços externos ainda precisam ser verificadas/aplicadas.
 
-Telefonia (URA + webhook) → STT → Agente educacional no watsonx com RAG por campanha → TTS → de volta ao aluno. Histórico anônimo é persistido para análise.
+## Estrutura
 
-## Estrutura do repositório
+| Diretório | Conteúdo |
+| --- | --- |
+| [backend](backend/README.md) | API Node.js/Express, PostgreSQL/Prisma, documentos, memória, analytics e pipeline RAG |
+| [backend/telephony-handler](backend/telephony-handler/README.md) | Serviço de voz separado, com Twilio, clientes watsonx e TTS |
+| [frontend](frontend/README.md) | Painel React/TypeScript para gerir agentes e materiais |
+| [watsonx](watsonx/README.md) | Prompts, contratos JSON e casos de teste dos agentes |
+| [telephony](telephony/README.md) | Configuração e contratos dos webhooks de voz |
+| [docs](docs/README.md) | Arquitetura, contratos e trabalho restante |
+| [data-pipeline](data-pipeline/README.md) | Escopo futuro de dados e scoring de municípios |
+| [design](design/README.md) | Referências visuais e de produto |
 
-```
-backend/
-  api/                   → API CRUD de campanhas e documentos (US-04)
-  rag-pipeline/          → Pipeline de chunking/embedding/indexação no watsonx (US-05)
-  telephony-handler/     → Webhook STT → agente → TTS (US-08-handler)
-  analytics/             → Endpoints de agregação do histórico (US-09, US-10)
+## Por onde começar
 
-frontend/
-  campaigns/             → Tela de gestão de campanhas (US-06)
-  analytics/             → Tela de métricas por campanha (US-10)
-  dashboard/             → Mapa de regiões (US-03-front, stretch)
+1. [Arquitetura e funcionamento atual](docs/architecture.md).
+2. [Instalação e atualização do backend](backend/README.md).
+3. [Configuração do handler de voz](backend/telephony-handler/README.md).
+4. [Pendências de implementação e aplicação](docs/pendencias.md).
 
-watsonx/
-  agent-educational/     → Configuração do agente educacional (US-08-agent)
-  agent-score/           → Configuração do agente de score de regiões (US-02, stretch)
-
-telephony/               → Configuração do provedor (Twilio/etc.) e URA (US-07)
-data-pipeline/           → Scripts de coleta e normalização de datasets públicos (US-01, stretch)
-docs/                    → User stories, plano de 3 semanas, documentação técnica
-design/                  → Artefatos de design (Figma, cartões, protótipos)
-```
-
-## Documentos principais
-
-- `docs/user-stories.md` — User stories completas, agrupadas em 5 épicos
-- `docs/sprint-plan.md` — Plano de 3 semanas para 3 pessoas
-- `docs/architecture.md` — Visão de arquitetura e fluxos
-- `docs/decisions/` — Decisões técnicas registradas (ADRs)
-
-## Setup
-
-Cada subpasta tem seu próprio README com dependências e instruções de setup específicas.
+As funcionalidades presentes no código não comprovam que migrations, prompts ou configurações já estejam publicados nos ambientes externos.

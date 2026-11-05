@@ -1,43 +1,24 @@
-# backend/api — API de Campanhas e Documentos
+# API de campanhas e documentos
 
-**Responsável pela US-04.**
+Esta pasta mantém a referência do módulo. A implementação executável está em `backend/src`, no mesmo processo da API de memória, analytics e RAG.
 
-Serviço de backend que expõe o CRUD de campanhas e os endpoints de upload/remoção de documentos. É consumido pelo front de campanhas (US-06), pelo pipeline de RAG (US-05) e pela URA de telefonia (US-07).
+## Rotas atuais
 
-## O que faz
+| Operação | Rota |
+| --- | --- |
+| Criar/listar campanhas | `POST /campanhas`, `GET /campanhas` |
+| Consultar campanhas para telefonia | `GET /campanhas/ativas` |
+| Consultar/editar/remover campanha | `GET`, `PATCH`, `DELETE /campanhas/:id` |
+| Enviar/listar documentos | `POST`, `GET /campanhas/:id/documentos` |
+| Consultar/remover documento | `GET`, `DELETE /campanhas/:id/documentos/:docId` |
+| Sugerir instruções | `POST /instrucoes/melhorar` — stub |
+| Testar agente no painel | `POST /campanhas/:id/testar` — stub |
 
-- Cria, lista, edita e desativa campanhas
-- Faz upload de documentos (PDF/TXT) para uma campanha
-- Remove documentos de uma campanha
-- Expõe status das campanhas para a URA decidir o roteamento
+`id` é a chave real da campanha; `slug` identifica a matéria. A resposta usada pela telefonia contém ambos. O CRUD do painel serializa `descricao` como `instrucoes` na leitura e aceita o alias na edição.
 
-## O que precisa estar aqui
+Uploads aceitam PDF/TXT com limite configurado em `MAX_UPLOAD_SIZE_MB`. O pipeline ocorre em segundo plano. O contrato efetivo de validação está nos schemas e nas rotas em `backend/src`; os códigos de erro e regras de ativação ainda precisam ser alinhados ao painel.
 
-- Modelagem do banco (tabelas `campanhas` e `documentos`)
-- Migrations
-- Endpoints:
-  - `POST /campanhas`
-  - `GET /campanhas`
-  - `PATCH /campanhas/:id` (inclui ativar/desativar)
-  - `DELETE /campanhas/:id`
-  - `POST /campanhas/:id/documentos` (upload)
-  - `DELETE /campanhas/:id/documentos/:docId`
-- Validação: aceita apenas PDF e TXT; tamanho máximo configurável
-- Integração com storage (local, S3 ou equivalente) para persistir os arquivos
-- Testes dos endpoints (unit + integração)
-
-## O que NÃO deve estar aqui
-
-- Lógica de chunking, embeddings ou indexação RAG (isso é `backend/rag-pipeline`)
-- UI (isso é `frontend/campaigns`)
-- Qualquer coisa relacionada a telefonia
-
-## Como fala com os outros módulos
-
-- **rag-pipeline** escuta o evento de upload daqui para disparar a indexação
-- **frontend/campaigns** consome todos os endpoints
-- **telephony** consulta `GET /campanhas` para montar a URA
-
-## Setup
-
-A ser preenchido quando a stack for escolhida (Node/Express, Python/FastAPI, etc.).
+- [Instalação e banco](../README.md).
+- [Rotas executáveis](../src/routes/campanhas.routes.js).
+- [Schemas de campanha](../src/schemas/campanha.schema.js).
+- [Pendências do painel e integrações](../../docs/pendencias.md).

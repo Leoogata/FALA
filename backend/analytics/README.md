@@ -1,41 +1,25 @@
-# backend/analytics — Persistência e Agregação de Interações
+# Histórico e analytics
 
-**Responsável pelas US-09 e US-10 (parte backend).**
+O código está em `backend/src`. Memória e analytics compartilham a tabela `interacoes`; não existem bancos ou processos separados para esses módulos.
 
-Serviço que registra cada turno de ligação de forma anônima e expõe endpoints de agregação para o front consumir métricas.
+## Persistência
 
-## O que faz
+O handler reserva o turno e confirma o resultado por `POST /interacoes`, autenticado com `INTERNAL_API_KEY`. O mesmo endpoint aceita o contrato legado por um adaptador que também usa conversas e prazo de 168 horas. O identificador original da chamada não é persistido como campo do histórico atual.
 
-- Recebe `POST /interacoes` do handler de voz ao final de cada turno
-- Persiste a interação de forma estritamente anônima
-- Agrega os dados e expõe métricas por campanha
+Perguntas e respostas passam por sanitização heurística. A presença desses controles não garante que todo texto livre esteja anonimizado; reforço e testes restantes estão no backlog.
 
-## O que precisa estar aqui
+## Consulta
 
-- Modelagem do banco: tabela `interacoes` (id, campanha_id, pergunta, resposta, confianca, sem_resposta, timestamp)
-- Endpoint `POST /interacoes` com validação que rejeita qualquer PI (telefone, nome, CPF)
-- Endpoint `GET /analytics/campanhas/:id` retornando:
-  - top perguntas por campanha
-  - % de respostas com baixa confiança (`sem_resposta: true`)
-  - volume de chamadas por período
-- Dados sempre agregados — nenhuma query retorna registros individuais
-- Testes dos endpoints e da regra de rejeição de PI
+`GET /analytics/campanhas/:campanhaId` aceita slug da matéria ou ID real e retorna:
 
-## O que NÃO deve estar aqui
+- `totalInteracoes` e `percentualSemResposta`;
+- `topPerguntas`, com frequência por texto;
+- `volumePorDia`, com contagens por data.
 
-- Nenhum campo de identificação pessoal nos registros
-- UI (isso é `frontend/analytics`)
-- Lógica de retreino de modelo
+As consultas excluem registros vencidos e ainda em processamento. O ranking de perguntas ignora textos suprimidos. A resposta é agregada, mas pode incluir a pergunta sanitizada; não é uma API pública de transcrições individuais.
 
-## Como fala com os outros módulos
+A rotina atual de expurgo roda no processo web. Retenção em backups, agendamento independente e tela de métricas ainda precisam ser concluídos.
 
-- **backend/telephony-handler** chama `POST /interacoes` ao final de cada turno
-- **frontend/analytics** consome `GET /analytics/campanhas/:id`
-
-## Regras de privacidade
-
-Qualquer payload que contenha telefone, nome, email ou CPF deve retornar 422. Isso é parte das restrições da competição IBM — sem dados pessoais, sem dados de clientes.
-
-## Setup
-
-A ser preenchido quando a stack for escolhida.
+- [Contrato de conversa](../../docs/contracts/conversa.md).
+- [Pendências](../../docs/pendencias.md).
+- [Instalação e migrations](../README.md).

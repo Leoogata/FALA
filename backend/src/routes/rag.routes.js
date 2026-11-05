@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { validate } from '../middlewares/validate.js';
 import { requireInternalToken } from '../middlewares/requireInternalToken.js';
 import { env } from '../config/env.js';
+import { campanhasRepository } from '../repositories/campanhas.repository.js';
+import { createError } from '../middlewares/errorHandler.js';
 
 const router = Router();
 
@@ -88,9 +90,11 @@ router.get(
   async (req, res, next) => {
     try {
       const { campanhaId, query, topK } = req.query;
+      const campanha = await campanhasRepository.buscarAtivaPorReferencia(campanhaId);
+      if (!campanha) throw createError(404, 'Campanha ativa não encontrada');
       const { watsonxClient } = await import('../rag/watsonxClient.js');
       const resultado = await watsonxClient.search(
-        campanhaId,
+        campanha.id,
         query,
         { topK: topK ?? env.RAG_SEARCH_TOP_K },
       );

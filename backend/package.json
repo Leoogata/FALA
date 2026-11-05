@@ -10,7 +10,8 @@
     "test": "node --experimental-vm-modules node_modules/.bin/jest --runInBand",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "test:integration": "node scripts/check-integration.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -22,12 +23,12 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "tesseract.js": "^7.0.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "prisma": "^5.22.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "jest": "^29.7.0",
-    "prisma": "^5.22.0",
     "supertest": "^7.0.0"
   },
   "jest": {
@@ -39,6 +40,9 @@
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/telephony-handler/"
+    ],
+    "setupFiles": [
+      "<rootDir>/tests/setup-env.cjs"
     ]
   },
   "prisma": {
