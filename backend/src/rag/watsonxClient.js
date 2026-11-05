@@ -37,7 +37,11 @@ const mockClient = {
   async indexChunks(campanhaId, chunks) {
     const campanhaMap = getCampanhaMap(campanhaId);
     // Substitui todos os chunks do documento (idempotência por documentoId)
-    const byDoc = Map.groupBy(chunks, (c) => c.documentoId);
+    const byDoc = new Map();
+    for (const chunk of chunks) {
+      if (!byDoc.has(chunk.documentoId)) byDoc.set(chunk.documentoId, []);
+      byDoc.get(chunk.documentoId).push(chunk);
+    }
     for (const [documentoId, docChunks] of byDoc) {
       campanhaMap.set(documentoId, docChunks);
     }

@@ -1,5 +1,8 @@
 # watsonx/agent-score — Agente de Score de Regiões *(stretch)*
 
+**Estado:** expansão futura; esta pasta descreve o escopo planejado, não uma integração operacional. Veja o [backlog de evoluções](../../docs/future-evolutions.md).
+
+
 **Responsável pela US-02 — faz parte do Épico 1 (stretch).**
 
 Agente que recebe os dados de um município e retorna score de sensibilidade com justificativa. É a inteligência do dashboard de regiões.

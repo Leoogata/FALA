@@ -362,11 +362,6 @@ describe('POST /voice/turn — esclarecimento pelo subagente', () => {
 // ──────────────────────────────────────────────────────────
 
 describe('POST /voice/turn — caminho feliz', () => {
-  it('deve retornar a resposta do subagente no TwiML <Say>', async () => {
-    orchestrator.routeQuestion.mockResolvedValue({
-      campanhaId: 'ciencias', confianca: 0.9, sem_rota: false,
-      precisa_esclarecimento: false, pergunta_esclarecimento: '',
-    });
   it('deve retornar a resposta do subagente no TwiML <Say> (fallback Polly)', async () => {
     orchestrator.routeQuestion.mockResolvedValue({ campanhaId: 'ciencias', confianca: 0.9, sem_rota: false });
     agentEducational.answerQuestion.mockResolvedValue({
@@ -468,6 +463,7 @@ describe('POST /voice/turn — caminho feliz', () => {
     expect(agentEducational.answerQuestion).toHaveBeenCalledWith(
       expect.objectContaining({ historico })
     );
+    expect(agentEducational.answerQuestion).toHaveBeenCalledTimes(1);
   });
 
   it('deve incluir o turno_token na URL de action do próximo Gather', async () => {
@@ -496,15 +492,6 @@ describe('POST /voice/turn — caminho feliz', () => {
 // ──────────────────────────────────────────────────────────
 
 describe('POST /voice/turn — fallback sem_resposta', () => {
-  it('deve retornar áudio de fallback quando subagente retorna sem_resposta: true', async () => {
-    orchestrator.routeQuestion.mockResolvedValue({
-      campanhaId: 'historia', confianca: 0.9, sem_rota: false,
-      precisa_esclarecimento: false, pergunta_esclarecimento: '',
-    });
-    agentEducational.answerQuestion.mockResolvedValue({
-      resposta: '', confianca: 0, sem_resposta: true,
-      precisa_esclarecimento: false, pergunta_esclarecimento: '',
-    });
   it('deve retornar mensagem de fallback via <Say> quando ElevenLabs indisponível', async () => {
     orchestrator.routeQuestion.mockResolvedValue({ campanhaId: 'historia', confianca: 0.9, sem_rota: false });
     agentEducational.answerQuestion.mockResolvedValue({ resposta: '', confianca: 0, sem_resposta: true });

@@ -50,106 +50,90 @@ enum Materia {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Campanha {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   nome         String
   // Identificador semântico para integração com o agente watsonx.
   // Nullable — campanhas sem slug não aparecem no roteamento de voz.
   // Valores válidos: historia | geografia | portugues | matematica | ciencias
-  slug         String?    @unique
+  slug         String?  @unique
   // System prompt do agente educacional desta campanha.
   // Nullable — campanhas sem descricao usam o prompt padrão do agente.
   descricao    String?
-  ativa        Boolean    @default(true)
-  criadaEm    DateTime   @default(now()) @map("criada_em")
-  atualizadaEm DateTime   @updatedAt      @map("atualizada_em")
+  ativa        Boolean  @default(true)
+  criadaEm     DateTime @default(now()) @map("criada_em")
+  atualizadaEm DateTime @default(now()) @updatedAt @map("atualizada_em")
 
-  documentos   Documento[]
-  interacoes   Interacao[]
+  documentos Documento[]
+  interacoes Interacao[]
 
   @@map("campanhas")
 }
 
-model Interacao {
-  id                   String   @id @default(cuid())
-  // slug semântico da campanha (ex: "matematica") — sem FK para sobreviver à deleção
-  campanhaId           String   @map("campanha_id")
-  pergunta             String
-  // null quando sem_resposta=true (nada a armazenar)
-  resposta             String?
-  scoreConfiancaStt    Float?   @map("score_confianca_stt")
-  scoreConfiancaAgente Float?   @map("score_confianca_agente")
-  semResposta          Boolean  @default(false) @map("sem_resposta")
-  // Identificador técnico de sessão Twilio — não é dado pessoal
-  callSid              String   @map("call_sid")
-  criadoEm             DateTime @default(now()) @map("criado_em")
+model Documento {
+  id              String          @id @default(cuid())
+  campanhaId      String          @map("campanha_id")
+  nomeOriginal    String          @map("nome_original")
+  mimeType        String          @map("mime_type")
+  caminhoArquivo  String          @map("caminho_arquivo")
+  statusIndexacao IndexacaoStatus @default(PROCESSANDO) @map("status_indexacao")
+  // Populado apenas quando statusIndexacao = ERRO
+  erroIndexacao   String?         @map("erro_indexacao")
+  criadoEm        DateTime        @default(now()) @map("criado_em")
+  atualizadoEm    DateTime        @default(now()) @updatedAt @map("atualizado_em")
+
+  campanha Campanha @relation(fields: [campanhaId], references: [id], onDelete: Restrict)
 
   @@index([campanhaId])
-  @@index([criadoEm])
-  @@map("interacoes")
-}
-
-model Documento {
-  id               String           @id @default(cuid())
-  campanhaId       String           @map("campanha_id")
-  nomeOriginal     String           @map("nome_original")
-  mimeType         String           @map("mime_type")
-  caminhoArquivo   String           @map("caminho_arquivo")
-  statusIndexacao  IndexacaoStatus  @default(PROCESSANDO) @map("status_indexacao")
-  // Populado apenas quando statusIndexacao = ERRO
-  erroIndexacao    String?          @map("erro_indexacao")
-  criadoEm        DateTime         @default(now()) @map("criado_em")
-  atualizadoEm    DateTime         @updatedAt      @map("atualizado_em")
-
-  campanha         Campanha         @relation(fields: [campanhaId], references: [id], onDelete: Restrict)
-
   @@map("documentos")
 }
 
 model Conversa {
-  id                  String         @id @default(uuid()) @db.Uuid
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chave_chamada       String         @unique @map("chave_chamada")
   versao_chave        String         @map("versao_chave")
   estado              ConversaEstado @default(ATIVA)
-  criada_em           DateTime       @default(now()) @db.Timestamptz @map("criada_em")
-  ultima_atividade_em DateTime       @default(now()) @db.Timestamptz @map("ultima_atividade_em")
-  encerrada_em        DateTime?      @db.Timestamptz @map("encerrada_em")
-  expira_em           DateTime       @db.Timestamptz @map("expira_em")
+  criada_em           DateTime       @default(now()) @map("criada_em") @db.Timestamptz
+  ultima_atividade_em DateTime       @default(now()) @map("ultima_atividade_em") @db.Timestamptz
+  encerrada_em        DateTime?      @map("encerrada_em") @db.Timestamptz
+  expira_em           DateTime       @map("expira_em") @db.Timestamptz
 
-  interacoes          Interacao[]
+  interacoes Interacao[]
 
   @@index([expira_em])
   @@map("conversas")
 }
 
 model Interacao {
-  id                            String          @id @default(uuid()) @db.Uuid
-  conversa_id                   String          @db.Uuid @map("conversa_id")
-  turno_token                   String          @db.Uuid @unique @map("turno_token")
-  ordem                         Int
-  campanha_id                   String?         @map("campanha_id")
-  materia                       Materia?
-  pergunta                      String?         @db.VarChar(500)
-  resposta                      String?         @db.VarChar(1000)
-  mensagem_retorno              String?         @db.VarChar(1000) @map("mensagem_retorno")
-  status                        InteracaoStatus @default(RECEBIDO)
-  texto_suprimido               Boolean         @default(false) @map("texto_suprimido")
-  sem_resposta                  Boolean         @default(false) @map("sem_resposta")
-  score_confianca_stt           Decimal?        @db.Decimal(4,3) @map("score_confianca_stt")
-  score_confianca_orquestrador  Decimal?        @db.Decimal(4,3) @map("score_confianca_orquestrador")
-  score_confianca_agente        Decimal?        @db.Decimal(4,3) @map("score_confianca_agente")
-  duracao_ms                    Int?            @map("duracao_ms")
-  versao_prompt                 String?         @map("versao_prompt")
+  // TEXT preserva os identificadores das interações legadas.
+  id                           String          @id @default(uuid())
+  conversa_id                  String          @map("conversa_id") @db.Uuid
+  turno_token                  String          @unique @map("turno_token") @db.Uuid
+  ordem                        Int
+  campanha_id                  String?         @map("campanha_id")
+  materia                      Materia?
+  pergunta                     String?
+  resposta                     String?
+  mensagem_retorno             String?         @map("mensagem_retorno") @db.VarChar(1000)
+  status                       InteracaoStatus @default(RECEBIDO)
+  texto_suprimido              Boolean         @default(false) @map("texto_suprimido")
+  sem_resposta                 Boolean         @default(false) @map("sem_resposta")
+  score_confianca_stt          Float?          @map("score_confianca_stt")
+  score_confianca_orquestrador Float?          @map("score_confianca_orquestrador")
+  score_confianca_agente       Float?          @map("score_confianca_agente")
+  duracao_ms                   Int?            @map("duracao_ms")
+  versao_prompt                String?         @map("versao_prompt")
   // Lease para controle de concorrência: execucao_id identifica quem detém o processamento
-  execucao_id                   String?         @db.Uuid @map("execucao_id")
-  lease_expira_em               DateTime?       @db.Timestamptz @map("lease_expira_em")
-  recebida_em                   DateTime        @default(now()) @db.Timestamptz @map("recebida_em")
-  concluida_em                  DateTime?       @db.Timestamptz @map("concluida_em")
-  expira_em                     DateTime        @db.Timestamptz @map("expira_em")
+  execucao_id                  String?         @map("execucao_id") @db.Uuid
+  lease_expira_em              DateTime?       @map("lease_expira_em") @db.Timestamptz
+  recebida_em                  DateTime        @default(now()) @map("recebida_em") @db.Timestamptz
+  concluida_em                 DateTime?       @map("concluida_em") @db.Timestamptz
+  expira_em                    DateTime        @map("expira_em") @db.Timestamptz
 
-  conversa   Conversa  @relation(fields: [conversa_id], references: [id], onDelete: Cascade)
-  campanha   Campanha? @relation(fields: [campanha_id], references: [id], onDelete: SetNull)
+  conversa Conversa  @relation(fields: [conversa_id], references: [id], onDelete: Cascade)
+  campanha Campanha? @relation(fields: [campanha_id], references: [id], onDelete: SetNull)
 
   @@unique([conversa_id, ordem])
+  @@index([campanha_id])
   @@index([conversa_id, recebida_em])
   @@index([expira_em])
   @@map("interacoes")

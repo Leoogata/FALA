@@ -1,5 +1,8 @@
 # data-pipeline — Scripts de Dados e Job de Scoring *(stretch)*
 
+**Estado:** expansão futura; esta pasta descreve o escopo planejado, não uma integração operacional. Veja o [backlog de evoluções](../docs/future-evolutions.md).
+
+
 **Responsável pelas US-01 e US-03-back — faz parte do Épico 1 (stretch).**
 
 Conjunto de scripts que coletam datasets públicos, normalizam em um formato único por município, rodam o agente de score em batch e persistem os resultados.

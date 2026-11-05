@@ -179,6 +179,8 @@ describe('clientes de implantações watsonx', () => {
       .mockResolvedValueOnce({ data: { results: [{ generated_text: '{"resposta":"incompleta"' }] } });
     await expect(answerQuestion({ campanhaId: 'geografia', pergunta: 'Pergunta' }))
       .rejects.toThrow('Não foi possível extrair um objeto JSON válido');
+  });
+
   test('injeta contexto RAG na pergunta quando chunks estão disponíveis', async () => {
     const chunk = 'Brasília foi inaugurada em 1960 como nova capital federal do Brasil.';
 

@@ -1,31 +1,16 @@
-# design — Artefatos de Design
+# Referências de design
 
-Artefatos visuais e de UX do projeto Ponte. Protótipos, mockups, cartões de user stories, identidade visual.
+O painel escolar implementado está em [frontend](../frontend/README.md). Esta pasta é reservada às referências visuais do Ponte; a existência deste README não indica que exports, arquivos Figma ou protótipos já tenham sido adicionados.
 
-## O que precisa estar aqui
+## Identidade de referência
 
-- `brand/` — identidade visual: paleta de cores, tipografia, logo (Ponte com arcos coloridos)
-- `user-stories-cards.html` — HTML dos cartões de user stories (fonte de verdade para colar no Figma)
-- `figma-link.md` — link do arquivo Figma do time
-- `mockups/` — exports de telas em PNG/SVG para referência rápida
-- `wireframes/` — rascunhos de baixa fidelidade das telas
-- `ivr-flow-diagram.png` — diagrama do fluxo da URA (quem leva isso para a demo)
-- `assets/` — logos, ícones e imagens usadas no produto e no vídeo
+| Cor | Valor |
+| --- | --- |
+| Navy | `#1A1F3C` |
+| Coral | `#E8623A` |
+| Teal | `#3ABFB0` |
+| Yellow | `#F5C842` |
 
-## O que NÃO deve estar aqui
+A interface usa “agente” como linguagem de produto; “campanha” permanece como nome técnico na API. Alterações visuais devem considerar o código atual do frontend e as referências efetivamente fornecidas pelo time.
 
-- Arquivos binários muito pesados (usar Figma ou cloud e colocar apenas o link)
-- Código de UI — isso é `frontend/`
-
-## Paleta sugerida (vinda da apresentação)
-
-- Navy: `#1A1F3C` — texto principal e marca
-- Coral: `#E8623A` — acento primário
-- Teal: `#3ABFB0` — acento secundário
-- Yellow: `#F5C842` — acento terciário
-
-## Fluxos a desenhar
-
-- Tela de gestão de campanhas (US-06)
-- Tela de métricas por campanha (US-10)
-- Fluxo da URA (US-07) — diagrama de árvore
+A tela de métricas e o mapa de regiões ainda são trabalho futuro. A validação de acessibilidade e layout responsivo do painel existente está em [pendências](../docs/pendencias.md#6-concluir-a-integração-do-painel).

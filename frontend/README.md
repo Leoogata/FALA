@@ -1,6 +1,6 @@
 # Ponte — Painel da Escola
 
-Interface web para que a equipe escolar crie agentes de IA, envie materiais e controle quais agentes atendem os alunos pelo 0800.
+Interface web para que a equipe escolar crie agentes de IA, envie materiais e controle quais agentes atendem os alunos por telefone.
 
 ## Stack
 
@@ -21,16 +21,16 @@ Copie o arquivo de exemplo e ajuste:
 cp .env.example .env.local
 ```
 
-| Variável | Padrão | Descrição |
+| Variável | Configuração local | Descrição |
 |---|---|---|
-| `VITE_API_URL` | `http://localhost:8000` | URL base do backend |
+| `VITE_API_URL` | `http://localhost:3001` | URL da API local; configurar explicitamente |
 | `VITE_USE_MOCK` | `false` | `true` para usar dados simulados sem backend |
 
 ### Modo mock (demonstração sem backend)
 
 ```bash
 # Crie .env.local com:
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:3001
 VITE_USE_MOCK=true
 ```
 
@@ -82,3 +82,13 @@ O modo mock começa com 4 agentes:
 - **História do Acre** — Ativo, 1 processando (vira pronto em 2–4 s), 2 prontos
 - **Ciências da horta** — Inativo, 1 pronto + 1 com erro
 - **Inglês básico** — Rascunho (sem instruções, sem materiais)
+
+
+## Integração e limites atuais
+
+O cliente ainda tem fallback para porta 8000 quando `VITE_API_URL` não é definida; configure-a para 3001 no ambiente local deste projeto. `VITE_USE_MOCK=true` usa somente dados simulados.
+
+As telas de gestão, materiais, instruções, teste e preview da ligação existem. Os endpoints de teste do agente e melhoria de instruções ainda são stubs. Regras de ativação, associação de matéria e validação de uploads precisam de alinhamento entre painel e API. O preview de ligação não comprova configuração de número nem execução real de telefonia.
+
+- [Arquitetura](../docs/architecture.md).
+- [Pendências de integração e homologação](../docs/pendencias.md#6-concluir-a-integração-do-painel).

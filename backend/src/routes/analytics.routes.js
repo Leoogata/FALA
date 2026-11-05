@@ -29,7 +29,6 @@ const AnalyticsCampanhaIdSchema = z.object({
  *         required: true
  *         schema:
  *           type: string
- *           enum: [historia, geografia, portugues, matematica, ciencias]
  *         example: matematica
  *       - in: query
  *         name: dias

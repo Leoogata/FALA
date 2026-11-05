@@ -1,34 +1,26 @@
-# docs — Documentação do Projeto Ponte
+# Documentação do projeto
 
-Documentação viva do projeto. Tudo que é decisão, plano, arquitetura ou contrato entre componentes vive aqui.
+A documentação descreve o funcionamento atual e o trabalho restante. Planos de execução e prompts de implementação já absorvidos pelo código foram removidos; o histórico continua disponível no Git.
 
-## O que precisa estar aqui
+## Entendimento do projeto
 
-- `user-stories.md` — user stories completas (12 USs em 5 épicos), com goals, escopo e critérios de aceite
-- `sprint-plan.md` — plano de 3 semanas para 3 pessoas, com agrupamento de USs por semana e por pessoa
-- `architecture.md` — visão de arquitetura, diagrama de componentes e fluxos principais
-- [`spec-memoria-conversa.md`](spec-memoria-conversa.md) — especificação da memória por ligação e persistência do histórico por sete dias, com expiração e exclusão automática
-- `contracts/` — contratos entre componentes:
-  - `api-campanhas.md` — endpoints e schemas da API de campanhas
-  - `agent-educational.md` — contrato de input/output do agente educacional
-  - `agent-score.md` — contrato de input/output do agente de score (stretch)
-  - `interacao.md` — schema do registro de interação anônima
-- `decisions/` — ADRs (Architecture Decision Records) de decisões tomadas:
-  - escolha do provedor de telefonia
-  - escolha de STT e TTS
-  - framework de frontend
-  - stack de backend
-- `demo-script.md` — roteiro da demonstração para a competição
-- `video-script.md` — roteiro do vídeo de 3 minutos
+- [Arquitetura](architecture.md): serviços, fluxo de voz, documentos e dados.
+- [Escopo do produto](user-stories.md): capacidades e situação de cada área.
+- [Backend](../backend/README.md): instalação, contratos e atualização do banco.
+- [Frontend](../frontend/README.md): painel, configuração e modo simulado.
+- [Telefonia](../telephony/README.md): fluxo e configuração do provedor.
+- [Agentes educacionais](../watsonx/agent-educational/README.md): prompts e contrato com a IBM.
 
-## O que NÃO deve estar aqui
+## O que falta
 
-- Código executável — só documentação
-- Credenciais ou segredos — nunca
-- Documentação específica de um módulo que já tem seu próprio README (deixar lá, não duplicar aqui)
+- [Pendências](pendencias.md): implementação, aplicação no ambiente e critérios para concluir cada item.
+- [Evoluções opcionais](future-evolutions.md): funcionalidades futuras que não bloqueiam o fluxo básico.
 
-## Restrições da competição IBM
+## Contratos necessários
 
-- Sem dados pessoais nem de clientes
-- Dados públicos apenas com uso comercial permitido
-- Documentação clara do projeto e vídeo de 3 minutos no YouTube são entregas obrigatórias
+- [Memória e histórico](contracts/conversa.md).
+- [Cliente RAG](contracts/watsonx-client.md).
+- [Webhooks de voz](../telephony/webhook-contract.md).
+- [Entradas e saídas dos agentes](../watsonx/agent-educational/schema.json).
+
+As rotas da API também estão documentadas em `/api-docs` quando o backend está em execução. Segredos e credenciais pertencem aos arquivos de ambiente, nunca à documentação versionada.

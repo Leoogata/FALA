@@ -1,16 +1,10 @@
-# Contrato — Cliente watsonx
+# Contrato — Cliente RAG
 
-**Status:** proposto · a ser confirmado entre Pessoa A (backend, US-04/05) e Pessoa B (watsonx, US-08-agent/handler)
-
-Este é o contrato da interface `watsonxClient` — a camada que isola o resto do backend dos detalhes do watsonx. A Pessoa A implementa um **mock** desta interface para desenvolver a US-05 sem depender da integração real. A Pessoa B (ou quem configurar o watsonx) implementa a **versão real** honrando exatamente estas assinaturas.
-
-Enquanto ambos respeitarem este contrato, os dois trabalham em paralelo sem retrabalho.
-
----
+Interface já utilizada pelo pipeline e pela busca HTTP. O cliente simulado está implementado em `backend/src/rag/watsonxClient.js`; o cliente remoto continua pendente. Este documento preserva o contrato necessário para implementar essa versão.
 
 ## Princípios
 
-1. **O backend nunca fala diretamente com o watsonx.** Toda interação passa por este cliente.
+1. **Operações do índice RAG passam por este cliente.** Chamadas de geração aos agentes usam clientes separados no serviço de voz.
 2. **Isolamento por campanha é por metadado**, não por índice físico. Cada chunk carrega `{ campanhaId, documentoId }`; as operações filtram por `campanhaId`.
 3. **Todas as operações de escrita/remoção são idempotentes.** Chamar duas vezes com os mesmos argumentos produz o mesmo estado final, sem erro. Isso é obrigatório — a estratégia de "sem estado preso" do pipeline depende disso.
 
@@ -62,7 +56,7 @@ Promise<{ indexados: number }>   // quantos chunks foram efetivamente indexados
 
 Busca os chunks mais relevantes para uma pergunta, **restrito a uma campanha**.
 
-> Consumido por: **US-08-agent / US-08-handler** (não pela API de campanhas). A Pessoa B é a principal consumidora desta função — confirmar o formato de retorno com ela.
+> Consumido pelo endpoint `/rag/search`; o serviço de voz usa os textos retornados para enriquecer a entrada do subagente.
 
 **Parâmetros**
 
@@ -70,7 +64,7 @@ Busca os chunks mais relevantes para uma pergunta, **restrito a uma campanha**.
 |------|------|-----------|
 | `campanhaId` | `string` | CUID da campanha. Filtro obrigatório — a busca **nunca** retorna chunks de outra campanha. |
 | `query` | `string` | Texto da pergunta do aluno (já transcrita pelo STT). |
-| `opcoes` | `object?` | Opcional. `{ topK?: number }` — quantos chunks retornar (default a definir, ex.: 5). |
+| `opcoes` | `object?` | Opcional. `{ topK?: number }` — quantos chunks retornar (default 5). |
 
 **Retorno**
 
@@ -132,12 +126,8 @@ Em todos esses casos a função deve **retornar normalmente com `{ removidos: 0 
 
 ---
 
-## Checklist de alinhamento (Pessoa A ↔ Pessoa B)
+## Implementação restante
 
-- [ ] Pessoa B confirma que o formato de retorno de `search` (`resultados[].texto` + `score`) atende o que o agente educacional precisa
-- [ ] Pessoa B confirma que a versão real de `deleteDocumentChunks` é idempotente conforme especificado
-- [ ] Definir o valor default de `topK` em `search`
-- [ ] Definir se `indexChunks` recebe os chunks já divididos (atual) ou o texto bruto (alternativa — mudaria quem faz o chunking)
-- [ ] Confirmar os nomes dos campos de metadado no watsonx (`campanhaId` / `documentoId`)
+O formato de retorno, chunking no backend e `topK` padrão 5 já são usados pelo código. Falta implementar armazenamento vetorial remoto, metadados e isolamento reais, persistência após reinício e operações idempotentes. As definições de RAG no schema geral dos agentes também precisam ser conferidas contra esta interface antes da integração remota.
 
-Enquanto os itens acima não forem confirmados, a Pessoa A desenvolve contra o mock — que já segue este contrato à risca.
+Acompanhe os critérios em [pendências](../pendencias.md#2-implementar-o-rag-remoto). Este contrato não é uma nova tarefa de reimplementar a versão simulada.

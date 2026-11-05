@@ -15,7 +15,9 @@ export const analyticsRepository = {
           1
         )::float                                                               AS "percentualSemResposta"
       FROM interacoes
-      WHERE campanha_id = ${campanhaId}
+      WHERE (materia::text = ${campanhaId} OR campanha_id = ${campanhaId})
+        AND expira_em > NOW()
+        AND status <> 'RECEBIDO'
     `;
     return rows[0] ?? { totalInteracoes: 0, percentualSemResposta: 0 };
   },
@@ -30,7 +32,10 @@ export const analyticsRepository = {
         pergunta,
         COUNT(*)::int AS total
       FROM interacoes
-      WHERE campanha_id = ${campanhaId}
+      WHERE (materia::text = ${campanhaId} OR campanha_id = ${campanhaId})
+        AND expira_em > NOW()
+        AND status <> 'RECEBIDO'
+        AND pergunta IS NOT NULL AND NOT texto_suprimido
       GROUP BY pergunta
       ORDER BY total DESC
       LIMIT ${limit}
@@ -44,13 +49,15 @@ export const analyticsRepository = {
   async volumePorDia(campanhaId, dias = 30) {
     return prisma.$queryRaw`
       SELECT
-        TO_CHAR(DATE(criado_em), 'YYYY-MM-DD') AS data,
+        TO_CHAR(DATE(recebida_em), 'YYYY-MM-DD') AS data,
         COUNT(*)::int                          AS total
       FROM interacoes
-      WHERE campanha_id = ${campanhaId}
-        AND criado_em >= NOW() - (${dias} || ' days')::interval
-      GROUP BY DATE(criado_em)
-      ORDER BY DATE(criado_em) ASC
+      WHERE (materia::text = ${campanhaId} OR campanha_id = ${campanhaId})
+        AND expira_em > NOW()
+        AND status <> 'RECEBIDO'
+        AND recebida_em >= NOW() - (${dias} || ' days')::interval
+      GROUP BY DATE(recebida_em)
+      ORDER BY DATE(recebida_em) ASC
     `;
   },
 };

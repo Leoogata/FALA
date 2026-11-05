@@ -40,10 +40,11 @@ export const campanhasRepository = {
   async listarAtivasParaOrquestrador() {
     const campanhas = await prisma.campanha.findMany({
       where: { ativa: true, slug: { not: null }, descricao: { not: null } },
-      select: { slug: true, nome: true, descricao: true },
+      select: { id: true, slug: true, nome: true, descricao: true },
       orderBy: { criadaEm: 'desc' },
     });
     return campanhas.map((c) => ({
+      id: c.id,
       campanhaId: c.slug,
       nome: c.nome,
       descricao: c.descricao,
@@ -75,6 +76,13 @@ export const campanhasRepository = {
           orderBy: { criadoEm: 'desc' },
         },
       },
+    });
+  },
+
+  async buscarAtivaPorReferencia(referencia) {
+    return prisma.campanha.findFirst({
+      where: { ativa: true, OR: [{ id: referencia }, { slug: referencia }] },
+      select: { id: true, slug: true },
     });
   },
 

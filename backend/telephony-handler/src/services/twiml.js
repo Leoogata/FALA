@@ -67,10 +67,8 @@ function buildSttRetryTwiml(turnoToken) {
     action: actionUrl(turnoToken),
     method: 'POST',
   });
-  gather.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.sttRetry);
-  response.redirect({ method: 'POST' }, actionUrl(turnoToken));
   addSpeech(gather, config.fallbackMessages.sttRetry, urlMensagemFixa('sttRetry'));
-  response.redirect({ method: 'POST' }, '/voice/turn');
+  response.redirect({ method: 'POST' }, actionUrl(turnoToken));
   return response.toString();
 }
 
@@ -97,10 +95,8 @@ function buildNoRouteTwiml(turnoToken) {
     action: actionUrl(turnoToken),
     method: 'POST',
   });
-  gather.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.semRota);
-  response.redirect({ method: 'POST' }, actionUrl(turnoToken));
   addSpeech(gather, config.fallbackMessages.semRota, urlMensagemFixa('semRota'));
-  response.redirect({ method: 'POST' }, '/voice/turn');
+  response.redirect({ method: 'POST' }, actionUrl(turnoToken));
   return response.toString();
 }
 
@@ -109,12 +105,7 @@ function buildNoRouteTwiml(turnoToken) {
  * @param {string} resposta — Texto da resposta do subagente.
  * @param {string} turnoToken — token para próxima captura.
  */
-function buildAnswerTwiml(resposta, turnoToken) {
- *
- * @param {string} resposta  — Texto da resposta do subagente (para fallback <Say>)
- * @param {string|null} audioUrl — URL pública do MP3 gerado pelo ElevenLabs, ou null
- */
-function buildAnswerTwiml(resposta, audioUrl = null) {
+function buildAnswerTwiml(resposta, turnoToken, audioUrl = null) {
   const response = new VoiceResponse();
   const gather = response.gather({
     input: 'speech dtmf',
@@ -137,11 +128,7 @@ function buildAnswerTwiml(resposta, audioUrl = null) {
  * TwiML de fallback de resposta (sem_resposta: true).
  * @param {string} turnoToken — token para próxima captura.
  */
-function buildNoAnswerTwiml(turnoToken) {
- *
- * @param {string|null} audioUrl — URL pública do MP3 com a mensagem de fallback, ou null
- */
-function buildNoAnswerTwiml(audioUrl = null) {
+function buildNoAnswerTwiml(turnoToken, audioUrl = null) {
   const response = new VoiceResponse();
   const gather = response.gather({
     input: 'speech dtmf',

@@ -57,7 +57,10 @@ async function getCampanhasAtivas() {
   const resultado = [];
 
   for (const campanha of ativas) {
-    const campanhaId = normalizarNome(campanha.nome);
+    const campanhaId = campanha.campanhaId || campanha.slug || normalizarNome(campanha.nome);
+    if (typeof campanha.id !== 'string' || !campanha.id.trim()) {
+      throw new Error('Campanha ativa sem ID válido');
+    }
     if (!campanhaId) continue;
 
     if (vistas.has(campanhaId)) {
