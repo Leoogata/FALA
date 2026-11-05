@@ -2,12 +2,14 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,6 +52,10 @@ enum Materia {
 model Campanha {
   id           String     @id @default(cuid())
   nome         String
+  // Identificador semântico para integração com o agente watsonx.
+  // Nullable — campanhas sem slug não aparecem no roteamento de voz.
+  // Valores válidos: historia | geografia | portugues | matematica | ciencias
+  slug         String?    @unique
   // System prompt do agente educacional desta campanha.
   // Nullable — campanhas sem descricao usam o prompt padrão do agente.
   descricao    String?
@@ -61,6 +67,25 @@ model Campanha {
   interacoes   Interacao[]
 
   @@map("campanhas")
+}
+
+model Interacao {
+  id                   String   @id @default(cuid())
+  // slug semântico da campanha (ex: "matematica") — sem FK para sobreviver à deleção
+  campanhaId           String   @map("campanha_id")
+  pergunta             String
+  // null quando sem_resposta=true (nada a armazenar)
+  resposta             String?
+  scoreConfiancaStt    Float?   @map("score_confianca_stt")
+  scoreConfiancaAgente Float?   @map("score_confianca_agente")
+  semResposta          Boolean  @default(false) @map("sem_resposta")
+  // Identificador técnico de sessão Twilio — não é dado pessoal
+  callSid              String   @map("call_sid")
+  criadoEm             DateTime @default(now()) @map("criado_em")
+
+  @@index([campanhaId])
+  @@index([criadoEm])
+  @@map("interacoes")
 }
 
 model Documento {

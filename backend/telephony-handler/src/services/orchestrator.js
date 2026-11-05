@@ -90,4 +90,28 @@ async function routeQuestion({ pergunta, campanhasAtivas, historico = [] }) {
   };
 }
 
+/**
+ * Extrai o primeiro objeto JSON VÁLIDO de uma string que pode conter prosa,
+ * cercas de código, ou o mesmo objeto repetido várias vezes (o modelo às vezes
+ * repete ou trunca). Varre candidatos { ... } e retorna o primeiro que parseia
+ * e contém a chave `campanhaId`. Null se nenhum servir.
+ */
+function extractJson(texto) {
+  const semCercas = String(texto).replace(/```(?:json)?/gi, '');
+  // Varre cada posição de '{' e tenta fechar num objeto parseável,
+  // avançando pelo último '}' e recuando até achar um JSON válido.
+  for (let i = 0; i < semCercas.length; i++) {
+    if (semCercas[i] !== '{') continue;
+    for (let j = semCercas.lastIndexOf('}'); j > i; j = semCercas.lastIndexOf('}', j - 1)) {
+      try {
+        const obj = JSON.parse(semCercas.slice(i, j + 1));
+        if (obj && typeof obj === 'object' && 'campanhaId' in obj) return obj;
+      } catch {
+        // tenta um '}' anterior
+      }
+    }
+  }
+  return null;
+}
+
 module.exports = { routeQuestion };

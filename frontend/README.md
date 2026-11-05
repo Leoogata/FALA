@@ -1,25 +1,84 @@
-# frontend — Interfaces Web
+# Ponte — Painel da Escola
 
-Agrupa as telas do Ponte, divididas por função.
+Interface web para que a equipe escolar crie agentes de IA, envie materiais e controle quais agentes atendem os alunos pelo 0800.
 
-## Subpastas
+## Stack
 
-- `campaigns/` — Interface de gestão de campanhas (US-06)
-- `analytics/` — Tela de métricas por campanha (US-10)
-- `dashboard/` — Mapa de regiões sensíveis (US-03-front, stretch)
+React 18 · TypeScript · Vite · React Router v6 · TanStack Query v5 · Tailwind CSS · Lucide React
 
-## Separação por página vs. app único
+## Setup
 
-As três telas podem ser um único app com três rotas, ou apps separados. Para o MVP é mais simples um único app com rotas internas (`/campanhas`, `/analytics`, `/dashboard`), reaproveitando componentes e estilos.
+```bash
+# dentro de frontend/
+npm install
+```
 
-## Decisões técnicas em aberto
+### Variáveis de ambiente
 
-- Framework: React/Next.js? Vue? Svelte?
-- Biblioteca de componentes: shadcn, Chakra, Mantine, custom?
-- Estratégia de autenticação (ou ausência dela no MVP?)
+Copie o arquivo de exemplo e ajuste:
 
-Definir junto com a stack de backend para evitar surpresas.
+```bash
+cp .env.example .env.local
+```
 
-## Design
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `VITE_API_URL` | `http://localhost:8000` | URL base do backend |
+| `VITE_USE_MOCK` | `false` | `true` para usar dados simulados sem backend |
 
-Seguir a identidade visual definida em `design/`. Paleta sugerida vem da apresentação: navy, coral, teal, yellow.
+### Modo mock (demonstração sem backend)
+
+```bash
+# Crie .env.local com:
+VITE_API_URL=http://localhost:8000
+VITE_USE_MOCK=true
+```
+
+### Rodar em desenvolvimento
+
+```bash
+npm run dev
+# Abre em http://localhost:5173
+```
+
+### Build de produção
+
+```bash
+npm run build
+npm run preview
+```
+
+## Estrutura
+
+```
+src/
+  api/          → Camada de API (uma função por rota)
+  mock/         → Implementação em memória para modo mock
+  components/
+    layout/     → Sidebar, AppLayout
+    ui/         → Badge, Button, Toggle, Modal, Toast, Skeleton
+    agent/      → InstrucoesEditor, MaterialUploadArea, MaterialList
+  pages/        → Uma página por rota
+  utils/        → date.ts, arquivo.ts
+  config.ts     → Constantes globais (escola, limites, textos)
+```
+
+## Rotas
+
+| URL | Página |
+|---|---|
+| `/` | Redireciona para `/agentes` |
+| `/agentes` | Lista de agentes |
+| `/agentes/novo` | Criação em 4 etapas |
+| `/agentes/:id` | Detalhe — aba Materiais |
+| `/agentes/:id/instrucoes` | Detalhe — aba Instruções |
+| `/agentes/:id/testar` | Detalhe — aba Testar |
+| `/agentes/:id/ligacao` | Detalhe — aba Na ligação |
+
+## Mock: dados de exemplo
+
+O modo mock começa com 4 agentes:
+- **Matemática 9º ano** — Ativo, 2 materiais prontos
+- **História do Acre** — Ativo, 1 processando (vira pronto em 2–4 s), 2 prontos
+- **Ciências da horta** — Inativo, 1 pronto + 1 com erro
+- **Inglês básico** — Rascunho (sem instruções, sem materiais)

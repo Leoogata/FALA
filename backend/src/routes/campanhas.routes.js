@@ -30,6 +30,14 @@ const router = Router();
  *                 minLength: 3
  *                 maxLength: 100
  *                 example: Matemática — 9º ano EF
+ *               slug:
+ *                 type: string
+ *                 enum: [historia, geografia, portugues, matematica, ciencias]
+ *                 nullable: true
+ *                 description: >
+ *                   Identificador semântico para integração com o orquestrador watsonx.
+ *                   Campanhas sem slug não aparecem em GET /campanhas/ativas.
+ *                 example: matematica
  *               descricao:
  *                 type: string
  *                 nullable: true
@@ -82,6 +90,41 @@ router.post('/', validate({ body: CriarCampanhaSchema }), campanhasController.cr
  *                             type: integer
  */
 router.get('/', validate({ query: ListarCampanhasQuerySchema }), campanhasController.listar);
+
+/**
+ * @openapi
+ * /campanhas/ativas:
+ *   get:
+ *     tags: [Campanhas]
+ *     summary: Lista campanhas ativas no formato do orquestrador watsonx
+ *     description: >
+ *       Retorna apenas campanhas ativas que possuem `slug` e `descricao` definidos.
+ *       Usado pelo telephony-handler para passar `campanhasAtivas` ao orquestrador.
+ *       O campo `campanhaId` contém o `slug` da campanha (e.g. "matematica") —
+ *       o orquestrador usa esse valor para rotear para o agente educacional correto.
+ *       Alinhado com o RouteQuestionInput do schema.json do agente.
+ *     responses:
+ *       200:
+ *         description: Lista de campanhas ativas para o orquestrador
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   campanhaId:
+ *                     type: string
+ *                     enum: [historia, geografia, portugues, matematica, ciencias]
+ *                     description: Slug semântico da campanha — usado pelo orquestrador como rota para o agente
+ *                     example: matematica
+ *                   nome:
+ *                     type: string
+ *                   descricao:
+ *                     type: string
+ *                     description: System prompt / escopo da campanha (usado para classificação)
+ */
+router.get('/ativas', campanhasController.listarAtivasParaOrquestrador);
 
 /**
  * @openapi
@@ -141,6 +184,11 @@ router.get('/:id', validate({ params: CampanhaIdSchema }), campanhasController.b
  *                 type: string
  *                 minLength: 3
  *                 maxLength: 100
+ *               slug:
+ *                 type: string
+ *                 enum: [historia, geografia, portugues, matematica, ciencias]
+ *                 nullable: true
+ *                 description: Enviar null para desassociar a campanha do roteamento de voz.
  *               descricao:
  *                 type: string
  *                 nullable: true

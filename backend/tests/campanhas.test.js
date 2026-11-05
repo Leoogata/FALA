@@ -11,6 +11,7 @@ import { jest } from '@jest/globals';
 const mockRepo = {
   criar: jest.fn(),
   listar: jest.fn(),
+  listarAtivasParaOrquestrador: jest.fn(),
   buscarPorId: jest.fn(),
   atualizar: jest.fn(),
   remover: jest.fn(),
@@ -135,5 +136,30 @@ describe('campanhasService.remover (cascade=true)', () => {
     expect(deletarChunksFn).toHaveBeenCalledWith('cmp-test-1', 'doc-1');
     expect(deletarChunksFn).toHaveBeenCalledWith('cmp-test-1', 'doc-2');
     expect(prisma.$transaction).toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe('campanhasService.listarAtivasParaOrquestrador', () => {
+  it('retorna campanhaId igual ao slug (não ao id cuid)', async () => {
+    mockRepo.listarAtivasParaOrquestrador.mockResolvedValue([
+      { campanhaId: 'matematica', nome: 'Matemática', descricao: 'Tutor de matemática.' },
+      { campanhaId: 'historia', nome: 'História', descricao: 'Tutor de história.' },
+    ]);
+
+    const result = await campanhasService.listarAtivasParaOrquestrador();
+
+    expect(result).toHaveLength(2);
+    expect(result[0].campanhaId).toBe('matematica');
+    expect(result[1].campanhaId).toBe('historia');
+    // garantia explícita: campanhaId não é um cuid
+    expect(result[0].campanhaId).not.toMatch(/^c[a-z0-9]{20,}$/);
+  });
+
+  it('retorna lista vazia quando não há campanhas ativas com slug', async () => {
+    mockRepo.listarAtivasParaOrquestrador.mockResolvedValue([]);
+
+    const result = await campanhasService.listarAtivasParaOrquestrador();
+    expect(result).toEqual([]);
   });
 });

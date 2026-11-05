@@ -43,6 +43,22 @@ module.exports = {
 
   // Rastreabilidade de prompt implantado no watsonx
   versaoPrompt: process.env.VERSAO_PROMPT || null,
+  analyticsServiceUrl: process.env.ANALYTICS_SERVICE_URL || '',
+  // URL pública do próprio servidor (ngrok/CF tunnel/produção)
+  // Necessária para gerar URLs de áudio acessíveis pelo Twilio via <Play>
+  // Ex: https://abc123.ngrok.io  ou  https://fala.seudominio.com
+  publicUrl: process.env.PUBLIC_URL || '',
+
+  // RAG — context injection
+  ragInternalToken: process.env.RAG_INTERNAL_TOKEN || '',
+  ragTimeoutMs: parseInt(process.env.RAG_TIMEOUT_MS || '800', 10),
+
+  // ElevenLabs TTS
+  elevenLabsApiKey: process.env.ELEVENLABS_API_KEY || '',
+  // Voice ID do painel ElevenLabs — default: "Rachel" (pt-BR compatível)
+  elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID || 'EXAVITQu4vr4xnSDxMaL',
+  // Timeout total para geração de áudio + upload (ms)
+  ttsTimeoutMs: parseInt(process.env.TTS_TIMEOUT_MS || '8000', 10),
 
   // Mensagens de fallback configuráveis
   fallbackMessages: {

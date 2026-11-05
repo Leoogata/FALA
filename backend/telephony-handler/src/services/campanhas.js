@@ -38,7 +38,7 @@ function normalizarNome(nome) {
  * @returns {Promise<Array<{ id: string, campanhaId: string, nome: string, descricao: string|null }>>}
  */
 async function getCampanhasAtivas() {
-  const response = await axios.get(`${config.backendApiUrl}/campanhas`, {
+  const response = await axios.get(`${config.backendApiUrl}/campanhas/ativas`, {
     timeout: 5000,
     params: { ativa: true },
   });

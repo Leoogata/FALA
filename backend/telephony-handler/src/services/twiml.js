@@ -3,9 +3,10 @@
 
 const twilio = require('twilio');
 const config = require('../config');
+const { urlMensagemFixa } = require('./tts');
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
-const VOICE = 'Polly.Camila';
+const VOICE = 'Polly.Camila';   // fallback quando ElevenLabs não está disponível
 const LANGUAGE = 'pt-BR';
 
 /**
@@ -20,6 +21,23 @@ function actionUrl(turnoToken) {
 /**
  * TwiML de boas-vindas: Say + Gather para capturar a pergunta inicial.
  * @param {string} turnoToken — token emitido para esta captura.
+ * Adiciona fala a um nó TwiML (Gather ou Response).
+ * Se audioUrl estiver definida, usa <Play>; caso contrário, <Say> com Polly.
+ *
+ * @param {object} node    — instância de VoiceResponse ou Gather
+ * @param {string} texto   — texto para <Say> (sempre preenchido, usado no fallback)
+ * @param {string|null} audioUrl — URL pública do MP3 (ElevenLabs) ou null
+ */
+function addSpeech(node, texto, audioUrl) {
+  if (audioUrl) {
+    node.play(audioUrl);
+  } else {
+    node.say({ language: LANGUAGE, voice: VOICE }, texto);
+  }
+}
+
+/**
+ * TwiML de boas-vindas: fala + Gather para capturar a pergunta inicial.
  */
 function buildWelcomeTwiml(turnoToken) {
   const response = new VoiceResponse();
@@ -30,7 +48,7 @@ function buildWelcomeTwiml(turnoToken) {
     action: actionUrl(turnoToken),
     method: 'POST',
   });
-  gather.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.boasVindas);
+  addSpeech(gather, config.fallbackMessages.boasVindas, urlMensagemFixa('boasVindas'));
   // Redirect acionado se Gather expirar sem fala
   response.redirect({ method: 'POST' }, actionUrl(turnoToken));
   return response.toString();
@@ -51,6 +69,8 @@ function buildSttRetryTwiml(turnoToken) {
   });
   gather.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.sttRetry);
   response.redirect({ method: 'POST' }, actionUrl(turnoToken));
+  addSpeech(gather, config.fallbackMessages.sttRetry, urlMensagemFixa('sttRetry'));
+  response.redirect({ method: 'POST' }, '/voice/turn');
   return response.toString();
 }
 
@@ -59,7 +79,7 @@ function buildSttRetryTwiml(turnoToken) {
  */
 function buildSttMaxRetriesTwiml() {
   const response = new VoiceResponse();
-  response.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.sttEncerrar);
+  addSpeech(response, config.fallbackMessages.sttEncerrar, urlMensagemFixa('sttEncerrar'));
   response.hangup();
   return response.toString();
 }
@@ -79,6 +99,8 @@ function buildNoRouteTwiml(turnoToken) {
   });
   gather.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.semRota);
   response.redirect({ method: 'POST' }, actionUrl(turnoToken));
+  addSpeech(gather, config.fallbackMessages.semRota, urlMensagemFixa('semRota'));
+  response.redirect({ method: 'POST' }, '/voice/turn');
   return response.toString();
 }
 
@@ -88,6 +110,11 @@ function buildNoRouteTwiml(turnoToken) {
  * @param {string} turnoToken — token para próxima captura.
  */
 function buildAnswerTwiml(resposta, turnoToken) {
+ *
+ * @param {string} resposta  — Texto da resposta do subagente (para fallback <Say>)
+ * @param {string|null} audioUrl — URL pública do MP3 gerado pelo ElevenLabs, ou null
+ */
+function buildAnswerTwiml(resposta, audioUrl = null) {
   const response = new VoiceResponse();
   const gather = response.gather({
     input: 'speech dtmf',
@@ -97,9 +124,11 @@ function buildAnswerTwiml(resposta, turnoToken) {
     method: 'POST',
     numDigits: '1',
   });
-  gather.say({ language: LANGUAGE, voice: VOICE }, resposta);
-  gather.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.proximoTurno);
-  response.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.encerramento);
+  // Resposta educacional — áudio dinâmico gerado por turno
+  addSpeech(gather, resposta, audioUrl);
+  // Prompt de continuação — áudio pré-gerado fixo
+  addSpeech(gather, config.fallbackMessages.proximoTurno, urlMensagemFixa('proximoTurno'));
+  addSpeech(response, config.fallbackMessages.encerramento, urlMensagemFixa('encerramento'));
   response.hangup();
   return response.toString();
 }
@@ -109,6 +138,10 @@ function buildAnswerTwiml(resposta, turnoToken) {
  * @param {string} turnoToken — token para próxima captura.
  */
 function buildNoAnswerTwiml(turnoToken) {
+ *
+ * @param {string|null} audioUrl — URL pública do MP3 com a mensagem de fallback, ou null
+ */
+function buildNoAnswerTwiml(audioUrl = null) {
   const response = new VoiceResponse();
   const gather = response.gather({
     input: 'speech dtmf',
@@ -118,9 +151,9 @@ function buildNoAnswerTwiml(turnoToken) {
     method: 'POST',
     numDigits: '1',
   });
-  gather.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.semResposta);
-  gather.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.proximoTurno);
-  response.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.encerramento);
+  addSpeech(gather, config.fallbackMessages.semResposta, audioUrl);
+  addSpeech(gather, config.fallbackMessages.proximoTurno, urlMensagemFixa('proximoTurno'));
+  addSpeech(response, config.fallbackMessages.encerramento, urlMensagemFixa('encerramento'));
   response.hangup();
   return response.toString();
 }
@@ -163,7 +196,7 @@ function buildIndisponibilidadeTwiml() {
  */
 function buildHangupTwiml() {
   const response = new VoiceResponse();
-  response.say({ language: LANGUAGE, voice: VOICE }, config.fallbackMessages.encerramento);
+  addSpeech(response, config.fallbackMessages.encerramento, urlMensagemFixa('encerramento'));
   response.hangup();
   return response.toString();
 }

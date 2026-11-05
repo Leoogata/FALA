@@ -1,16 +1,17 @@
 # docker-compose.yml — ambiente de desenvolvimento local
 #
-# Sobe:
-#   - app: o backend Ponte (com hot-reload via node --watch)
-#   - postgres: banco local para dev (não usado quando DATABASE_URL aponta para Supabase)
+# Serviços:
+#   postgres          — banco de dados local
+#   backend           — API de campanhas/documentos (porta 3001)
+#   telephony-handler — webhooks Twilio → watsonx (porta 3000, porta que o Twilio chama)
 #
 # Uso:
-#   docker compose up              → sobe tudo
-#   docker compose up app          → só o backend (se já tiver banco externo)
-#   docker compose down -v         → derruba e apaga volumes
+#   docker compose up                    → sobe tudo
+#   docker compose up backend            → só o backend
+#   docker compose down -v               → derruba e apaga volumes
 #
-# Para usar o Supabase como banco em vez do postgres local,
-# basta setar DATABASE_URL no .env com a connection string do Supabase.
+# Para usar o Supabase em vez do postgres local:
+#   remova a variável DATABASE_URL dos serviços e configure-a no .env
 
 services:
   postgres:
@@ -30,28 +31,40 @@ services:
       timeout: 5s
       retries: 10
 
-  app:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
       target: production
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"
     env_file:
       - .env
     environment:
-      # Sobrescreve DATABASE_URL para usar o postgres local do compose
-      # Remova esta linha se quiser usar o Supabase
       DATABASE_URL: postgresql://usuario:senha@postgres:5432/ponte
     volumes:
-      # Persiste uploads entre restarts do container
       - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
     command: >
-      sh -c "npx prisma migrate deploy && node src/server.js"
+      sh -c "npx prisma migrate deploy && node prisma/seed.js && node src/server.js"
+
+  telephony-handler:
+    build:
+      context: ./telephony-handler
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./telephony-handler/.env
+    environment:
+      # Aponta para o backend dentro da rede docker
+      BACKEND_API_URL: http://backend:3000
+    depends_on:
+      - backend
 
   # Serviço auxiliar para rodar migrações manualmente:
   #   docker compose run --rm migrate

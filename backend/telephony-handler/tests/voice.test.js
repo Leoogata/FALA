@@ -26,11 +26,21 @@ const orchestrator = require('../src/services/orchestrator');
 const agentEducational = require('../src/services/agentEducational');
 const campanhas = require('../src/services/campanhas');
 const conversaClient = require('../src/services/conversaClient');
+const analytics = require('../src/services/analytics');
+const tts = require('../src/services/tts');
 
 jest.mock('../src/services/orchestrator');
 jest.mock('../src/services/agentEducational');
 jest.mock('../src/services/campanhas');
 jest.mock('../src/services/conversaClient');
+jest.mock('../src/services/analytics');
+jest.mock('../src/services/tts', () => ({
+  textoParaAudioUrl: jest.fn(),
+  consumirAudio: jest.fn(),
+  // urlMensagemFixa retorna null por padrão nos testes — sem cache pré-aquecido
+  urlMensagemFixa: jest.fn().mockReturnValue(null),
+  preAquecer: jest.fn().mockResolvedValue(undefined),
+}));
 
 const CAMPANHAS_MOCK = [
   { id: 'cm-hist', campanhaId: 'historia', nome: 'História', descricao: 'Eventos históricos.' },
@@ -51,6 +61,9 @@ beforeEach(() => {
   conversaClient.buscarContexto.mockResolvedValue([]);
   conversaClient.concluirTurno.mockResolvedValue({ id: 'uuid-interacao-1', status: 'RESPONDIDO' });
   conversaClient.encerrarConversa.mockResolvedValue();
+  analytics.registrarInteracao.mockImplementation(() => {});
+  // Por padrão o TTS retorna null → fallback para Polly (não afeta os demais testes)
+  tts.textoParaAudioUrl.mockResolvedValue(null);
 });
 
 // ──────────────────────────────────────────────────────────
@@ -354,6 +367,8 @@ describe('POST /voice/turn — caminho feliz', () => {
       campanhaId: 'ciencias', confianca: 0.9, sem_rota: false,
       precisa_esclarecimento: false, pergunta_esclarecimento: '',
     });
+  it('deve retornar a resposta do subagente no TwiML <Say> (fallback Polly)', async () => {
+    orchestrator.routeQuestion.mockResolvedValue({ campanhaId: 'ciencias', confianca: 0.9, sem_rota: false });
     agentEducational.answerQuestion.mockResolvedValue({
       resposta: 'Fotossíntese é o processo pelo qual as plantas produzem energia a partir da luz solar.',
       confianca: 0.85,
@@ -361,6 +376,7 @@ describe('POST /voice/turn — caminho feliz', () => {
       precisa_esclarecimento: false,
       pergunta_esclarecimento: '',
     });
+    tts.textoParaAudioUrl.mockResolvedValue(null); // sem ElevenLabs → Polly
 
     const res = await request(app)
       .post('/voice/turn')
@@ -370,6 +386,28 @@ describe('POST /voice/turn — caminho feliz', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('Fotossíntese');
     expect(res.text).toContain('<Say');
+    expect(res.text).not.toContain('<Play'); // fallback Polly: sem Play
+  });
+
+  it('deve usar <Play> quando ElevenLabs retorna URL de áudio', async () => {
+    orchestrator.routeQuestion.mockResolvedValue({ campanhaId: 'ciencias', confianca: 0.9, sem_rota: false });
+    agentEducational.answerQuestion.mockResolvedValue({
+      resposta: 'Fotossíntese é o processo pelo qual as plantas produzem energia.',
+      confianca: 0.85,
+      sem_resposta: false,
+    });
+    tts.textoParaAudioUrl.mockResolvedValue('https://mcs.us1.twilio.com/v1/Services/AC.../audio.mp3');
+
+    const res = await request(app)
+      .post('/voice/turn')
+      .type('form')
+      .send({ CallSid: 'CA007b', SpeechResult: 'O que é fotossíntese?', Confidence: '0.9', CallStatus: 'in-progress' });
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<Play');
+    expect(res.text).toContain('mcs.us1.twilio.com');
+    // Quando há Play, o texto da resposta NÃO aparece no XML (está no áudio)
+    expect(res.text).not.toContain('Fotossíntese');
   });
 
   it('deve confirmar a gravação no banco antes de retornar resposta', async () => {
@@ -467,6 +505,10 @@ describe('POST /voice/turn — fallback sem_resposta', () => {
       resposta: '', confianca: 0, sem_resposta: true,
       precisa_esclarecimento: false, pergunta_esclarecimento: '',
     });
+  it('deve retornar mensagem de fallback via <Say> quando ElevenLabs indisponível', async () => {
+    orchestrator.routeQuestion.mockResolvedValue({ campanhaId: 'historia', confianca: 0.9, sem_rota: false });
+    agentEducational.answerQuestion.mockResolvedValue({ resposta: '', confianca: 0, sem_resposta: true });
+    tts.textoParaAudioUrl.mockResolvedValue(null);
 
     const res = await request(app)
       .post('/voice/turn')
@@ -478,6 +520,22 @@ describe('POST /voice/turn — fallback sem_resposta', () => {
     expect(conversaClient.concluirTurno).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'SEM_RESPOSTA', sem_resposta: true })
     );
+    expect(res.text).not.toContain('<Play');
+  });
+
+  it('deve usar <Play> para a mensagem de fallback quando ElevenLabs disponível', async () => {
+    orchestrator.routeQuestion.mockResolvedValue({ campanhaId: 'historia', confianca: 0.9, sem_rota: false });
+    agentEducational.answerQuestion.mockResolvedValue({ resposta: '', confianca: 0, sem_resposta: true });
+    tts.textoParaAudioUrl.mockResolvedValue('https://mcs.us1.twilio.com/v1/Services/AC.../fallback.mp3');
+
+    const res = await request(app)
+      .post('/voice/turn')
+      .type('form')
+      .send({ CallSid: 'CA009b', SpeechResult: 'Quem foi Dom Pedro I?', Confidence: '0.9', CallStatus: 'in-progress' });
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<Play');
+    expect(res.text).toContain('fallback.mp3');
   });
 });
 

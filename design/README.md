@@ -29,4 +29,3 @@ Artefatos visuais e de UX do projeto Ponte. Protótipos, mockups, cartões de us
 - Tela de gestão de campanhas (US-06)
 - Tela de métricas por campanha (US-10)
 - Fluxo da URA (US-07) — diagrama de árvore
-- Mapa de regiões (US-03-front, stretch)

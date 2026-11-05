@@ -3,12 +3,16 @@ import { createError } from '../middlewares/errorHandler.js';
 import prisma from '../config/prisma.js';
 
 export const campanhasService = {
-  async criar({ nome }) {
-    return campanhasRepository.criar({ nome });
+  async criar({ nome, slug, descricao }) {
+    return campanhasRepository.criar({ nome, slug, descricao });
   },
 
   async listar({ ativa } = {}) {
     return campanhasRepository.listar({ ativa });
+  },
+
+  async listarAtivasParaOrquestrador() {
+    return campanhasRepository.listarAtivasParaOrquestrador();
   },
 
   async buscarPorId(id) {
