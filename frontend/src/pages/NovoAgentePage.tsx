@@ -351,7 +351,7 @@ function Etapa1({
         <p id="nome-error" className="text-[var(--err)] text-xs mt-1">{nomeError}</p>
       ) : (
         <p id="nome-help" className="text-[12px] text-[var(--muted)] mt-1">
-          É este nome que a ligação fala para o aluno escolher. Use palavras simples, sem siglas ou abreviações.
+          Este nome identifica o agente da escola. Use palavras simples.
         </p>
       )}
     </div>
@@ -478,7 +478,7 @@ function Etapa4({
           />
           <div>
             <span className="font-semibold text-sm">Ativar agora</span>
-            <p className="text-xs text-[var(--muted)] mt-0.5">O agente passa a aparecer no menu da ligação para os alunos.</p>
+            <p className="text-xs text-[var(--muted)] mt-0.5">Este será o agente das novas ligações da escola. Ao ativá-lo, o agente anterior será desativado.</p>
           </div>
         </label>
         {docsResumo.processando > 0 && (

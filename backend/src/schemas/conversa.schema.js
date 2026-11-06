@@ -5,6 +5,7 @@ import { z } from 'zod';
 export const criarConversaSchema = z.object({
   chave_chamada: z.string().min(1).max(256),
   versao_chave: z.string().min(1).max(64),
+  codigo_escola: z.string().regex(/^\d{4}$/).nullable().optional(),
 });
 
 // ── POST /internal/conversas/:id/turnos ──────────────────────────────────────
@@ -33,6 +34,8 @@ export const concluirTurnoSchema = z.object({
   score_confianca_agente: z.number().min(0).max(1).nullable().optional(),
   duracao_ms: z.number().int().nonnegative().nullable().optional(),
   versao_prompt: z.string().max(128).nullable().optional(),
+  fontes: z.array(z.object({ documentoId: z.string(), trechoId: z.string().optional(),
+    nomeDocumento: z.string().optional() })).max(20).optional(),
 });
 
 // ── PATCH /internal/conversas/:id ────────────────────────────────────────────

@@ -1,6 +1,7 @@
 // src/repositories/conversas.repository.js — Persistência de Conversa e Interacao
 import { randomUUID } from 'crypto';
 import prisma from '../config/prisma.js';
+import { selecionarAgente } from '../services/agentConfig.service.js';
 
 const RETENTION_HOURS = 168;
 const CONTEXT_MAX_TURNS = 5;
@@ -50,7 +51,10 @@ function expiresAt(from = new Date()) {
  * @param {{ chaveChamada: string, versaoChave: string }} params
  * @returns {Promise<{ id: string, estado: string }>}
  */
-export async function upsertConversa({ chaveChamada, versaoChave }) {
+export async function upsertConversa({ chaveChamada, versaoChave, codigoEscola }) {
+  const existente = await prisma.conversa.findUnique({ where: { chave_chamada: chaveChamada } });
+  if (existente) return existente;
+  const agente = await selecionarAgente(codigoEscola);
   const agora = new Date();
   const expira = expiresAt(agora);
 
@@ -59,6 +63,9 @@ export async function upsertConversa({ chaveChamada, versaoChave }) {
     create: {
       chave_chamada: chaveChamada,
       versao_chave: versaoChave,
+      escolaId: agente.escolaId,
+      agenteId: agente.id,
+      instrucoesAgente: agente.descricao,
       estado: 'ATIVA',
       criada_em: agora,
       ultima_atividade_em: agora,
@@ -68,7 +75,7 @@ export async function upsertConversa({ chaveChamada, versaoChave }) {
       // Na recuperação, não reabrir conversa encerrada/expirada — só atualizar ATIVA
       ultima_atividade_em: agora,
     },
-    select: { id: true, estado: true, expira_em: true },
+    select: { id: true, estado: true, expira_em: true, escolaId: true, agenteId: true },
   });
 
   return conversa;
@@ -235,6 +242,7 @@ export async function concluirTurno({
   scoreConfiancaAgente,
   duracaoMs,
   versaoPrompt,
+  fontes,
 }) {
   const agora = new Date();
 
@@ -270,6 +278,7 @@ export async function concluirTurno({
         score_confianca_agente: scoreConfiancaAgente ?? null,
         duracao_ms: duracaoMs ?? null,
         versao_prompt: versaoPrompt ?? null,
+        fontes: fontes ?? [],
         concluida_em: agora,
       },
       select: { id: true, status: true },

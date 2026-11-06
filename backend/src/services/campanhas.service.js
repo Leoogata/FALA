@@ -3,12 +3,12 @@ import { createError } from '../middlewares/errorHandler.js';
 import prisma from '../config/prisma.js';
 
 export const campanhasService = {
-  async criar({ nome, slug, descricao }) {
-    return campanhasRepository.criar({ nome, slug, descricao });
+  async criar(dados) {
+    return campanhasRepository.criar(dados);
   },
 
-  async listar({ ativa } = {}) {
-    return campanhasRepository.listar({ ativa });
+  async listar({ ativa, escolaId } = {}) {
+    return campanhasRepository.listar({ ativa, escolaId });
   },
 
   /**
@@ -42,6 +42,11 @@ export const campanhasService = {
   async atualizar(id, dados) {
     const existe = await campanhasRepository.buscarPorId(id);
     if (!existe) throw createError(404, 'Campanha não encontrada');
+    if (dados.ativa === true) {
+      if (!existe.escolaId || !existe.usaRag) throw createError(409, 'Somente agentes escolares com RAG podem ser publicados');
+      const prontos = (existe.documentos ?? []).filter((d) => d.statusIndexacao === 'PRONTO');
+      if (!prontos.length) throw createError(409, 'Envie e processe ao menos um material antes de ativar o agente');
+    }
     return campanhasRepository.atualizar(id, dados);
   },
 

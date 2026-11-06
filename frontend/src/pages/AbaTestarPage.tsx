@@ -15,6 +15,7 @@ interface Mensagem {
   texto?: string;
   confianca?: number;
   semResposta?: boolean;
+  precisaEsclarecimento?: boolean;
 }
 
 const SUGESTOES = [
@@ -29,6 +30,8 @@ export function AbaTestarPage() {
   const [pergunta, setPergunta] = useState('');
   const [aguardando, setAguardando] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMensagens([]); }, [agente.id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -47,15 +50,22 @@ export function AbaTestarPage() {
     ]);
 
     try {
-      const res = await testarAgente(agente.id, p);
+      const historico: Array<{ pergunta: string; resposta: string }> = [];
+      for (let i = 0; i < mensagens.length - 1; i++) {
+        if (mensagens[i].tipo === 'pergunta' && mensagens[i + 1].tipo === 'resposta') {
+          historico.push({ pergunta: mensagens[i].texto ?? '', resposta: mensagens[i + 1].texto ?? '' });
+        }
+      }
+      const res = await testarAgente(agente.id, p, historico.slice(-5));
       setMensagens((prev) => [
         ...prev.filter((m) => m.tipo !== 'aguardando'),
         {
           id: crypto.randomUUID(),
           tipo: 'resposta',
-          texto: res.resposta,
+          texto: res.precisa_esclarecimento ? res.pergunta_esclarecimento : (res.resposta || 'Não encontrei essa informação nos materiais. Você pode reformular ou consultar seu professor.'),
           confianca: res.confianca,
           semResposta: res.sem_resposta,
+          precisaEsclarecimento: res.precisa_esclarecimento,
         },
       ]);
     } catch {
@@ -134,6 +144,7 @@ export function AbaTestarPage() {
           onChange={(e) => setPergunta(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') enviar(pergunta); }}
           placeholder="Digite uma pergunta…"
+          maxLength={500}
           disabled={aguardando}
           className="flex-1 px-3 py-2 rounded-lg border border-[var(--line)] text-sm focus:outline-2 focus:outline-[var(--proc)] disabled:opacity-50"
         />
@@ -191,7 +202,7 @@ function MensagemBubble({ msg, onSpeak }: { msg: Mensagem; onSpeak: (t: string) 
               </span>
             ) : (
               <span className="text-[11px] font-bold bg-[var(--err-bg)] text-[var(--err)] px-2 py-0.5 rounded-full">
-                Sem resposta nos materiais
+                {msg.precisaEsclarecimento ? 'Aguardando esclarecimento' : 'Sem resposta nos materiais'}
               </span>
             )}
             {hasSpeech && msg.texto && (

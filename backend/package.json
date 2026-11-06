@@ -11,7 +11,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
-    "test:integration": "node scripts/check-integration.mjs"
+    "test:integration": "node scripts/check-integration.mjs",
+    "escola:chave": "node scripts/school-access.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -16,6 +16,7 @@ const router = Router();
  * /campanhas:
  *   post:
  *     tags: [Campanhas]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Cria uma nova campanha
  *     requestBody:
  *       required: true
@@ -32,7 +33,6 @@ const router = Router();
  *                 example: Matemática — 9º ano EF
  *               slug:
  *                 type: string
- *                 enum: [historia, geografia, portugues, matematica, ciencias]
  *                 nullable: true
  *                 description: >
  *                   Identificador semântico para integração com o orquestrador watsonx.
@@ -64,6 +64,7 @@ router.post('/', validate({ body: CriarCampanhaSchema }), campanhasController.cr
  * /campanhas:
  *   get:
  *     tags: [Campanhas]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Lista campanhas (com filtro opcional por status)
  *     parameters:
  *       - in: query
@@ -96,6 +97,7 @@ router.get('/', validate({ query: ListarCampanhasQuerySchema }), campanhasContro
  * /campanhas/ativas:
  *   get:
  *     tags: [Campanhas]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Lista campanhas ativas no formato do orquestrador watsonx
  *     description: >
  *       Retorna apenas campanhas ativas que possuem `slug` e `descricao` definidos.
@@ -131,6 +133,7 @@ router.get('/ativas', campanhasController.listarAtivasParaOrquestrador);
  * /campanhas/{id}:
  *   get:
  *     tags: [Campanhas]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Detalha uma campanha com seus documentos
  *     parameters:
  *       - in: path
@@ -166,6 +169,7 @@ router.get('/:id', validate({ params: CampanhaIdSchema }), campanhasController.b
  * /campanhas/{id}:
  *   patch:
  *     tags: [Campanhas]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Edita nome e/ou status de uma campanha
  *     parameters:
  *       - in: path
@@ -186,7 +190,6 @@ router.get('/:id', validate({ params: CampanhaIdSchema }), campanhasController.b
  *                 maxLength: 100
  *               slug:
  *                 type: string
- *                 enum: [historia, geografia, portugues, matematica, ciencias]
  *                 nullable: true
  *                 description: Enviar null para desassociar a campanha do roteamento de voz.
  *               descricao:
@@ -226,6 +229,7 @@ router.patch(
  * /campanhas/{id}:
  *   delete:
  *     tags: [Campanhas]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Remove uma campanha
  *     parameters:
  *       - in: path

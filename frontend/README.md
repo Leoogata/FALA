@@ -1,5 +1,7 @@
 # Ponte — Painel da Escola
 
+> Atualização: arquitetura de agente único implementada. Consulte o [guia de implantação](../docs/nova-arquitetura-implantacao.md) para o fluxo, as variáveis e as migrations atuais. Menções abaixo ao orquestrador ou ao RAG simulado descrevem o fluxo anterior.
+
 Interface web para que a equipe escolar crie agentes de IA, envie materiais e controle quais agentes atendem os alunos por telefone.
 
 ## Stack

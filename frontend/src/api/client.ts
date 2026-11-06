@@ -1,5 +1,6 @@
 import { ApiError } from './types';
 import { TIMEOUT_PADRAO_MS } from '../config';
+import { schoolToken, clearSchool } from '../schoolSession';
 
 // Porta 3001 = backend/api. (3000 é o telephony-handler.) Sobrescreva via VITE_API_URL.
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
@@ -19,6 +20,7 @@ export async function apiFetch<T>(
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        ...(schoolToken() ? { Authorization: `Bearer ${schoolToken()}` } : {}),
         ...(init.headers ?? {}),
       },
     });
@@ -32,6 +34,7 @@ export async function apiFetch<T>(
   clearTimeout(timer);
 
   if (!res.ok) {
+    if (res.status === 401) clearSchool();
     let body: { erro?: string; mensagem?: string; error?: string } = {};
     try { body = await res.json(); } catch { /* ignore */ }
     // Suporta tanto { erro, mensagem } (formato antigo/mock) quanto { error } (backend)
@@ -40,7 +43,7 @@ export async function apiFetch<T>(
     throw new ApiError(res.status, erro, mensagem);
   }
 
-  return res.json() as Promise<T>;
+  return res.status === 204 ? undefined as T : res.json() as Promise<T>;
 }
 
 // Upload com progresso via XHR
@@ -53,6 +56,7 @@ export function apiUpload<T>(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${BASE_URL}${path}`);
+    if (schoolToken()) xhr.setRequestHeader('Authorization', `Bearer ${schoolToken()}`);
     xhr.timeout = timeoutMs;
 
     xhr.upload.onprogress = (e) => {
@@ -77,6 +81,7 @@ export function apiUpload<T>(
           reject(new ApiError(xhr.status, 'parse_error', 'Resposta inválida do servidor.'));
         }
       } else {
+        if (xhr.status === 401) clearSchool();
         let body: { erro?: string; mensagem?: string; error?: string } = {};
         try { body = JSON.parse(xhr.responseText); } catch { /* ignore */ }
         reject(new ApiError(

@@ -27,29 +27,9 @@ export function AbaLigacaoPage() {
   const { agente } = useOutletContext<OutletCtx>();
   const hasSpeech = 'speechSynthesis' in window;
 
-  const { data: ativos = [] } = useQuery({
-    queryKey: ['agentes', { ativa: true }],
-    queryFn: () => listarAgentes({ ativa: true }),
-  });
-
-  // Lista de preview: ativos em ordem da API, + agente atual se inativo
-  const previewNomes: string[] = (() => {
-    const lista = ativos.map((a) => a.nome);
-    if (!agente.ativa && !lista.includes(agente.nome)) {
-      lista.push(agente.nome);
-    }
-    return lista;
-  })();
-
-  const listaTexto = buildLista(previewNomes);
-
-  const isVazia = previewNomes.length === 0;
-
-  const falaMenu = isVazia
-    ? `${TEXTOS_LIGACAO.saudacao} ${TEXTOS_LIGACAO.semAgentes}`
-    : `${TEXTOS_LIGACAO.saudacao} ${TEXTOS_LIGACAO.menu.replace('{lista}', listaTexto)}`;
-
-  const falaEscolha = TEXTOS_LIGACAO.escolha.replace('{nome}', agente.nome);
+  const falaMenu = 'Olá! Aqui é a FALA. Se você tem o código da sua escola, digite agora no teclado. Para continuar sem código, é só aguardar.';
+  const falaEscolha = `Você está conversando com ${agente.nome}. Pode fazer sua pergunta.`;
+  const isVazia = false;
 
   function ouvirTudo() {
     if (!window.speechSynthesis) return;
@@ -87,7 +67,7 @@ export function AbaLigacaoPage() {
 
       {!agente.ativa && (
         <div className="bg-[var(--draft-bg)] border border-[var(--draft)] text-[var(--draft)] text-sm rounded-xl px-4 py-3 mb-4">
-          Este agente está inativo: hoje ele não aparece no menu da ligação. A prévia mostra como ficaria depois de ativado.
+          Este agente está inativo: ele ainda não atende as ligações da escola. A prévia mostra como ficaria depois de ativado.
         </div>
       )}
 
@@ -103,7 +83,7 @@ export function AbaLigacaoPage() {
           <>
             <FalaLinha
               quem="ALUNO"
-              texto={`"${agente.nome}"`}
+              texto="Digita o código da escola no teclado."
               italic
             />
             <FalaLinha

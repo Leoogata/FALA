@@ -1,5 +1,7 @@
 # Serviço de voz
 
+> Atualização: arquitetura de agente único implementada. Consulte o [guia de implantação](../../docs/nova-arquitetura-implantacao.md) para o fluxo, as variáveis e as migrations atuais. Menções abaixo ao orquestrador ou ao RAG simulado descrevem o fluxo anterior.
+
 Aplicação Express/CommonJS separada do backend principal. Recebe webhooks Twilio, coordena os agentes watsonx, mantém o contexto da ligação pela API e devolve TwiML.
 
 ## Fluxo e endpoints

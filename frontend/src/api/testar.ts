@@ -8,13 +8,14 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 export function testarAgente(
   agenteId: string,
   pergunta: string,
+  historico: Array<{ pergunta: string; resposta: string }> = [],
 ): Promise<RespostaTestar> {
   if (USE_MOCK) return mockTestarAgente(agenteId, pergunta);
   return apiFetch<RespostaTestar>(
     `/campanhas/${agenteId}/testar`,
     {
       method: 'POST',
-      body: JSON.stringify({ pergunta }),
+      body: JSON.stringify({ pergunta, historico }),
     },
     TIMEOUT_IA_MS,
   );

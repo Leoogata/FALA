@@ -1,62 +1,48 @@
-# Arquitetura e funcionamento atual
+# Arquitetura do agente único
 
-Referência do código existente em 05/11/2026. A configuração dos ambientes externos não foi comprovada nesta documentação; veja [pendências](pendencias.md).
+O FALA usa um único deployment de prompt template no watsonx.ai. O backend seleciona a configuração por código da escola; não existe chamada a um classificador ou orquestrador.
 
-## Serviços
+## Configurações
 
-| Componente | Implementação | Execução local |
-| --- | --- | --- |
-| Painel escolar | React, TypeScript, Vite, TanStack Query e Tailwind | `frontend/`, normalmente porta 5173 |
-| API | Node.js, Express, módulos ES, Zod e Prisma | `backend/`, porta padrão 3001 |
-| Voz | Node.js, Express e CommonJS | `backend/telephony-handler/`, porta padrão 3000 |
-| Banco | PostgreSQL | Configurado por `DATABASE_URL`; migrations usam `DIRECT_URL` |
-| IA | Templates implantados no watsonx.ai | IDs configurados no serviço de voz |
+- **Padrão:** configuração da plataforma, sem registro de campanha, sem documentos e sem consulta RAG. Atende às matérias do ensino fundamental com conhecimento geral.
+- **Escolar:** registro em `Campanha`, com `escolaId`, `descricao` (instruções), `usaRag=true` e materiais próprios. Pode haver vários rascunhos, com somente um agente ativo por escola.
+- Ativar um agente exige ao menos um documento `PRONTO` e desativa o anterior dentro de uma transação. Uma constraint parcial também impede duas publicações simultâneas.
+- `slug` é apenas um rótulo opcional. Não participa da seleção do agente ou da pesquisa dos materiais.
 
-Os dois serviços Node têm dependências e testes separados. No Compose, o backend escuta internamente em 3000 e é exposto no host em 3001.
+## Ligação
 
-## Fluxo de uma ligação
+1. `/voice/incoming` solicita o código DTMF opcional.
+2. `/voice/escola` resolve o código e cria/recupera a conversa pela chave HMAC. Código inexistente é informado antes de seguir no geral; erro de serviço não muda silenciosamente a escola.
+3. `Conversa` persiste `escolaId`, `agenteId` e uma cópia das instruções. Recuperação após restart mantém esses vínculos; publicar outro agente afeta apenas novas conversas.
+4. `/voice/turn` valida e sanitiza a fala e reserva o turno, preservando a idempotência existente.
+5. O handler chama `POST /internal/respostas` com `conversa_id` e `turno_token`. Não envia IDs de escola, matéria ou instruções escolhidos pelo cliente.
+6. O backend valida a conversa e o turno, recupera pergunta e histórico do banco e chama o serviço compartilhado `gerarResposta`.
+7. No modo escolar, pesquisa os materiais; no padrão, pula a pesquisa. Depois chama o mesmo deployment IBM.
+8. O resultado é validado/sanitizado. A telefonia confirma a finalização no banco antes de devolver áudio, com TTS e fallback Polly.
 
-1. O provedor chama `POST /voice/incoming`. O handler identifica a ligação, cria/recupera uma conversa pela API e emite um token para a captura de voz.
-2. O aluno fala livremente. O Twilio envia transcrição e confiança a `POST /voice/turn?turno_token=...`.
-3. O handler valida a fala, sanitiza a pergunta, reserva o turno no banco e recupera as trocas anteriores.
-4. `GET /campanhas/ativas` fornece as campanhas que têm matéria e descrição configuradas. O orquestrador recebe a pergunta e o histórico para escolher a matéria ou pedir esclarecimento.
-5. O cliente educacional busca contexto em `/rag/search` e envia a pergunta, o contexto disponível e o histórico ao subagente da matéria.
-6. O resultado é confirmado no banco antes da resposta de voz. O handler usa áudio ElevenLabs quando disponível e `<Say>` com Polly como fallback.
-7. Uma nova captura permite continuar a conversa. Tecla, callback de término ou inatividade encerram a conversa.
+As colunas legadas de matéria, confiança do orquestrador e status `SEM_ROTA` ficam no banco para preservar registros históricos. O novo fluxo não as utiliza para decidir respostas.
 
-Não há menu inicial de matérias: a classificação é feita pelo orquestrador.
+## RAG
 
-## Campanha, matéria e agente
+- TXT/PDF → extração/OCR → trechos → embeddings IBM → `documento_trechos` no PostgreSQL/pgvector.
+- Modelo inicial: `ibm/granite-embedding-278m-multilingual`, 768 dimensões.
+- Cada trecho guarda documento, agente, escola, ordem, texto e modelo do embedding.
+- Busca exata por distância cosseno, restrita por escola, agente, modelo e documentos `PRONTO`. O limite `RAG_MIN_SCORE` é configurável e deve ser calibrado com perguntas reais.
+- As fontes retornadas são os trechos fornecidos ao modelo; não constituem verificação automática de cada afirmação da resposta.
+- Sem evidência: `sem_resposta=true`, sem geração com conhecimento geral. Falha de busca: erro de serviço, sem fallback silencioso para o agente padrão.
+- Indexação é idempotente por documento/ordem e protegida por transação. Remoção de documentos elimina os trechos. Trabalhos `PROCESSANDO` são reenfileirados na inicialização após restart.
+- `WATSONX_MOCK=true` simula apenas o índice RAG em memória para desenvolvimento/testes. A geração do agente continua usando a IBM. Em uso real, configurar `false`.
 
-- `Campanha.id` é o identificador real do banco, usado no CRUD, documentos e associação de interações.
-- `Campanha.slug` identifica a matéria: `historia`, `geografia`, `portugues`, `matematica` ou `ciencias`.
-- No JSON dos agentes, `campanhaId` significa esse slug. A resposta de `/campanhas/ativas` contém também `id` para o handler não confundir as duas identificações.
-- O nome de uma turma pode ser personalizado; não é a chave de roteamento.
-- As instruções editadas no painel ficam em `Campanha.descricao`. A resposta do painel usa o alias `instrucoes`; elas ainda não são sincronizadas automaticamente com os prompts implantados na IBM.
+## Painel e isolamento
 
-## Documentos e RAG
+O painel exige uma chave administrativa por escola, provisionada em `SCHOOL_API_TOKENS` no backend. O código público de telefone não é senha. Cada chave identifica exatamente uma escola.
 
-O upload persiste o arquivo localmente e cria um `Documento` em `PROCESSANDO`. Uma fila em memória executa extração de TXT/PDF, OCR de apoio, divisão de texto e indexação pelo cliente RAG. O status passa para `PRONTO` ou `ERRO`.
+Todos os endpoints de agentes, documentos, testes, instruções e analytics exigem autenticação. O acesso por ID valida a propriedade antes de ler, alterar ou receber um upload. Criação/listagem obtêm a escola do contexto autenticado, ignorando tentativas de escolher outra escola no corpo ou na URL. Os analytics usam ID real, sem agregação por slug compartilhado.
 
-Os chunks são isolados pelo ID real da campanha. A busca HTTP aceita ID ou slug e resolve o ID antes de consultar o índice.
+O painel mantém a chave somente na sessão da aba, permite sair e envia o Bearer também nos uploads. Para contas individuais e papéis de usuários, substituir essa autenticação por um provedor de identidade com associação usuário/escola; a separação de dados já está no backend.
 
-O pipeline e a busca existem, mas o armazenamento vetorial remoto não está implementado em `backend/src/rag/watsonxClient.js`. Com `WATSONX_MOCK=true`, os chunks ficam em memória e desaparecem ao reiniciar o processo. O status `PRONTO` nesse modo não comprova indexação remota.
+A aba Testar usa o mesmo serviço `gerarResposta` da telefonia, inclusive RAG, instruções, política de evidência e histórico. Rascunhos podem ser testados antes da publicação. O teste não salva conversas de alunos.
 
-## Conversas e análise
+## Operação e validação
 
-O banco tem `Campanha`, `Documento`, `Conversa` e `Interacao`. Perguntas e respostas são guardadas por ligação, em ordem, com vencimento de 168 horas por interação. O contexto dos agentes usa até cinco trocas recentes.
-
-O handler associa a ligação por HMAC do `CallSid`; o identificador original não é um campo persistido do histórico atual. Isso é pseudonimização da associação: a sanitização de texto é heurística e não garante anonimização completa.
-
-Os endpoints de analytics consultam o mesmo histórico, por matéria ou ID da campanha, e excluem interações vencidas ou ainda em processamento. Não há uma tela de analytics implementada no painel atual.
-
-A rotina de expurgo e encerramento por inatividade está no processo da API. Execução independente, backups e outros limites estão no [backlog](pendencias.md).
-
-## Referências de implementação
-
-- [Schema e relações](../backend/prisma/schema.prisma).
-- [Rotas da API](../backend/src/routes/index.js).
-- [Ciclo de voz](../backend/telephony-handler/src/handlers/turnHandler.js).
-- [Memória](contracts/conversa.md).
-- [Interface RAG](contracts/watsonx-client.md).
-- [Prompts dos agentes](../watsonx/agent-educational/system-prompt.md).
+Veja [a migração e configuração](nova-arquitetura-implantacao.md). As alterações do repositório não aplicam migrations nem reiniciam serviços remotos automaticamente.

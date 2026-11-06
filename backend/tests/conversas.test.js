@@ -57,6 +57,7 @@ beforeEach(() => {
 
 describe('upsertConversa', () => {
   it('cria conversa nova com estado ATIVA', async () => {
+    mockPrisma.conversa.findUnique.mockResolvedValueOnce(null);
     mockPrisma.conversa.upsert.mockResolvedValue({
       id: 'uuid-conv-1', estado: 'ATIVA', expira_em: em168h,
     });

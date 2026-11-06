@@ -23,6 +23,25 @@ const schema = z.object({
   RAG_INTERNAL_TOKEN: z.string().min(16, 'RAG_INTERNAL_TOKEN deve ter ao menos 16 caracteres'),
   // Número máximo de chunks retornados por busca RAG
   RAG_SEARCH_TOP_K: z.coerce.number().int().positive().max(20).default(5),
+  RAG_MIN_SCORE: z.coerce.number().min(0).max(1).default(0.35),
+  WATSONX_API_KEY: z.string().default(''),
+  WATSONX_PROJECT_ID: z.string().default(''),
+  WATSONX_URL: z.string().url().default('https://us-south.ml.cloud.ibm.com'),
+  WATSONX_DEPLOYMENT_ID: z.string().default('01a1ac2a-64c7-748f-8215-d80978470715'),
+  WATSONX_EMBEDDING_MODEL: z.string().default('ibm/granite-embedding-278m-multilingual'),
+  WATSONX_TIMEOUT_MS: z.coerce.number().int().positive().default(20000),
+  VERSAO_PROMPT: z.string().default('agente-unico-v1'),
+  // Chaves administrativas por escola. O código telefônico não é uma senha.
+  SCHOOL_API_TOKENS: z.string().default('{}').transform((s, ctx) => {
+    try {
+      const tokens = z.record(z.string().regex(/^\d{4}$/), z.string().min(32)).parse(JSON.parse(s));
+      if (new Set(Object.values(tokens)).size !== Object.keys(tokens).length) throw new Error('Chaves repetidas');
+      return tokens;
+    } catch {
+      ctx.addIssue({ code: 'custom', message: 'Use um JSON { codigoEscola: chaveCom32Caracteres }' });
+      return z.NEVER;
+    }
+  }),
 });
 
 const parsed = schema.safeParse(process.env);

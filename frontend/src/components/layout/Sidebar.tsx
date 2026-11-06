@@ -1,6 +1,8 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { ESCOLA, TELEFONE_0800 } from '../../config';
+import { ESCOLA as ESCOLA_MOCK, TELEFONE_0800 } from '../../config';
+import { currentSchool, clearSchool } from '../../schoolSession';
+const escolaAtual = () => currentSchool() ?? ESCOLA_MOCK;
 
 function LogoSvg() {
   return (
@@ -13,6 +15,7 @@ function LogoSvg() {
 }
 
 export function Sidebar() {
+  const ESCOLA = escolaAtual();
   const location = useLocation();
   const agentesActive = location.pathname.startsWith('/agentes');
 
@@ -52,7 +55,7 @@ export function Sidebar() {
           <div className="opacity-80">
             <span className="font-semibold">{ESCOLA.nome}</span>
             {' · '}
-            {ESCOLA.municipio} · {ESCOLA.uf}
+            Painel da escola
           </div>
           <div className="bg-white/10 rounded px-2 py-1 shrink-0">
             <span className="text-[10px] font-bold tracking-widest uppercase opacity-60 mr-1.5">Código</span>
@@ -68,6 +71,7 @@ export function Sidebar() {
 }
 
 function SidebarContent({ agentesActive }: { agentesActive: boolean }) {
+  const ESCOLA = escolaAtual();
   return (
     <div className="flex flex-col h-full">
       {/* Marca */}
@@ -101,11 +105,12 @@ function SidebarContent({ agentesActive }: { agentesActive: boolean }) {
         </div>
       </nav>
 
+      {import.meta.env.VITE_USE_MOCK !== 'true' && <button onClick={clearSchool} className="mx-4 mt-5 text-left text-sm underline">Sair da escola</button>}
       {/* Rodapé: cartão da escola */}
       <div className="mt-auto px-4 py-4 border-t border-white/10 text-xs">
         <div className="font-bold text-sm leading-snug">{ESCOLA.nome}</div>
         <div className="opacity-65 mt-0.5 mb-3">
-          {ESCOLA.municipio} · {ESCOLA.uf}
+          Painel da escola
         </div>
         <div className="bg-white/10 rounded-lg px-3 py-2 mb-3">
           <div className="text-[10px] font-bold tracking-widest uppercase opacity-60 mb-1">

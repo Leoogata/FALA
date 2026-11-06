@@ -41,6 +41,7 @@ function handleUpload(req, res, next) {
  * /campanhas/{id}/documentos:
  *   get:
  *     tags: [Documentos]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Lista documentos de uma campanha com filtro opcional por status
  *     parameters:
  *       - in: path
@@ -82,6 +83,7 @@ router.get(
  * /campanhas/{id}/documentos/{docId}:
  *   get:
  *     tags: [Documentos]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Detalha um documento — útil para monitorar o status de indexação
  *     description: >
  *       Inclui `erroIndexacao` quando o status for ERRO,
@@ -124,6 +126,7 @@ router.get(
  * /campanhas/{id}/documentos:
  *   post:
  *     tags: [Documentos]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Faz upload de um documento (PDF ou TXT) para uma campanha
  *     parameters:
  *       - in: path
@@ -176,6 +179,7 @@ router.post(
  * /campanhas/{id}/documentos/{docId}:
  *   delete:
  *     tags: [Documentos]
+ *     security: [{ schoolAuth: [] }]
  *     summary: Remove um documento e seus chunks do índice watsonx
  *     description: >
  *       Permitido mesmo se o documento estiver em status PROCESSANDO.

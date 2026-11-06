@@ -3,7 +3,7 @@ import app from './app.js';
 import { recuperarOrfaos } from './rag/recovery.js';
 import { iniciarAgendadorExpurgo } from './jobs/expurgo.js';
 
-// Marca documentos presos em PROCESSANDO como ERRO antes de aceitar tráfego
+// Recupera trabalhos de indexação persistidos antes de aceitar tráfego
 recuperarOrfaos()
   .catch((err) => console.error('[startup] Falha na recuperação de órfãos:', err))
   .finally(() => {

@@ -10,6 +10,7 @@ const router = Router();
 
 const RagSearchQuerySchema = z.object({
   campanhaId: z.string().min(1, 'campanhaId é obrigatório'),
+  escolaId: z.string().min(1, 'escolaId é obrigatório'),
   query: z
     .string()
     .min(1, 'query é obrigatória')
@@ -25,7 +26,7 @@ const RagSearchQuerySchema = z.object({
  *     summary: Busca chunks relevantes no índice RAG de uma campanha
  *     description: >
  *       Endpoint interno — consumido pelo telephony-handler para injetar contexto
- *       no subagente educacional antes de chamar o watsonx (Context Injection).
+ *       no agente educacional antes de chamar o watsonx.
  *       Requer header `Authorization: Bearer <RAG_INTERNAL_TOKEN>`.
  *       O isolamento por campanha é garantido — uma busca nunca retorna chunks de outra campanha.
  *     security:
@@ -36,7 +37,11 @@ const RagSearchQuerySchema = z.object({
  *         required: true
  *         schema:
  *           type: string
- *           example: matematica
+ *           example: id-real-do-agente
+ *       - in: query
+ *         name: escolaId
+ *         required: true
+ *         schema: { type: string }
  *       - in: query
  *         name: query
  *         required: true
@@ -89,14 +94,14 @@ router.get(
   validate({ query: RagSearchQuerySchema }),
   async (req, res, next) => {
     try {
-      const { campanhaId, query, topK } = req.query;
-      const campanha = await campanhasRepository.buscarAtivaPorReferencia(campanhaId);
+      const { campanhaId, escolaId, query, topK } = req.query;
+      const campanha = await campanhasRepository.buscarAtivaPorReferencia(campanhaId, escolaId);
       if (!campanha) throw createError(404, 'Campanha ativa não encontrada');
       const { watsonxClient } = await import('../rag/watsonxClient.js');
       const resultado = await watsonxClient.search(
         campanha.id,
         query,
-        { topK: topK ?? env.RAG_SEARCH_TOP_K },
+        { escolaId, topK: topK ?? env.RAG_SEARCH_TOP_K },
       );
       res.json(resultado);
     } catch (err) {

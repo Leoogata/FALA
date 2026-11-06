@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const SLUGS_VALIDOS = ['historia', 'geografia', 'portugues', 'matematica', 'ciencias'];
+const slugSchema = z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(100);
 
 export const CriarCampanhaSchema = z.object({
   nome: z
@@ -8,19 +8,14 @@ export const CriarCampanhaSchema = z.object({
     .trim()
     .min(3, 'nome deve ter no mínimo 3 caracteres')
     .max(100, 'nome deve ter no máximo 100 caracteres'),
-  slug: z
-    .enum(SLUGS_VALIDOS, { message: `slug deve ser um de: ${SLUGS_VALIDOS.join(', ')}` })
-    .optional(),
+  slug: slugSchema.optional(),
   descricao: z.string().trim().min(1).optional(),
 });
 
 export const EditarCampanhaSchema = z
   .object({
     nome: z.string().trim().min(3).max(100).optional(),
-    slug: z
-      .enum(SLUGS_VALIDOS, { message: `slug deve ser um de: ${SLUGS_VALIDOS.join(', ')}` })
-      .nullable()
-      .optional(),
+    slug: slugSchema.nullable().optional(),
     descricao: z.string().trim().min(1).nullable().optional(),
     // `instrucoes` é o alias enviado pelo frontend (mapeado para `descricao` no controller)
     instrucoes: z.string().trim().min(1).nullable().optional(),
@@ -30,7 +25,7 @@ export const EditarCampanhaSchema = z
     message: 'Informe ao menos um campo para atualizar (nome, slug, descricao, instrucoes ou ativa)',
   });
 
-export const SLUGS_CAMPANHAS = SLUGS_VALIDOS;
+export const SLUGS_CAMPANHAS = ['historia', 'geografia', 'portugues', 'matematica', 'ciencias'];
 
 export const CampanhaIdSchema = z.object({
   id: z.string().min(1, 'id é obrigatório'),

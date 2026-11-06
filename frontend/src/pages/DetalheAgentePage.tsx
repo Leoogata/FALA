@@ -40,7 +40,7 @@ export function DetalheAgentePage() {
       await queryClient.invalidateQueries({ queryKey: ['agente', id] });
       await queryClient.invalidateQueries({ queryKey: ['agentes'] });
       if (value) {
-        showToast({ message: `"${agente.nome}" está ativo e já aparece no menu da ligação.`, type: 'success' });
+        showToast({ message: `"${agente.nome}" é o agente ativo para as novas ligações da escola.`, type: 'success' });
       } else {
         showToast({
           message: `"${agente.nome}" foi desativado. Os alunos não conseguem mais acessá-lo.`,
