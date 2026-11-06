@@ -13,20 +13,7 @@ module.exports = {
   sttConfidenceThreshold: parseFloat(process.env.TWILIO_STT_CONFIDENCE_THRESHOLD || '0.6'),
   voiceMaxRetries: parseInt(process.env.VOICE_MAX_RETRIES || '2', 10),
 
-  // watsonx
-  watsonxApiKey: process.env.WATSONX_API_KEY || '',
-  watsonxProjectId: process.env.WATSONX_PROJECT_ID || '',
-  watsonxOrchestratorId: process.env.WATSONX_AGENT_ORCHESTRATOR_ID || '',
-  orchestratorConfidenceThreshold: parseFloat(process.env.ORCHESTRATOR_CONFIDENCE_THRESHOLD || '0.5'),
-
-  // Mapeamento campanhaId → agentId
-  watsonxAgentIds: {
-    historia: process.env.WATSONX_AGENT_ID_HISTORIA || '',
-    geografia: process.env.WATSONX_AGENT_ID_GEOGRAFIA || '',
-    portugues: process.env.WATSONX_AGENT_ID_PORTUGUES || '',
-    matematica: process.env.WATSONX_AGENT_ID_MATEMATICA || '',
-    ciencias: process.env.WATSONX_AGENT_ID_CIENCIAS || '',
-  },
+  agentTimeoutMs: parseInt(process.env.AGENT_TIMEOUT_MS || '45000', 10),
 
   // URLs de outros serviços
   backendApiUrl: process.env.BACKEND_API_URL || '',
@@ -49,10 +36,6 @@ module.exports = {
   // Ex: https://abc123.ngrok.io  ou  https://fala.seudominio.com
   publicUrl: process.env.PUBLIC_URL || '',
 
-  // RAG — context injection
-  ragInternalToken: process.env.RAG_INTERNAL_TOKEN || '',
-  ragTimeoutMs: parseInt(process.env.RAG_TIMEOUT_MS || '800', 10),
-
   // ElevenLabs TTS
   elevenLabsApiKey: process.env.ELEVENLABS_API_KEY || '',
   // Voice ID do painel ElevenLabs — default: "Rachel" (pt-BR compatível)
@@ -63,7 +46,7 @@ module.exports = {
   // Mensagens de fallback configuráveis
   fallbackMessages: {
     semResposta: process.env.FALLBACK_MSG_SEM_RESPOSTA
-      || 'Ainda não tenho o conteúdo dessa matéria disponível. Consulte seu professor para mais detalhes.',
+      || 'Não consegui responder a essa pergunta. Você pode reformular ou consultar seu professor.',
     semRota: process.env.FALLBACK_MSG_SEM_ROTA
       || 'Não identifiquei a matéria da sua dúvida. Pode reformular? Por exemplo: Qual é a capital do Brasil? ou O que é fotossíntese?',
     sttRetry: process.env.FALLBACK_MSG_STT_RETRY

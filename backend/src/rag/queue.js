@@ -11,8 +11,8 @@
  *
  * Comportamento atual (setImmediate):
  *   - O job é processado na próxima iteração do event loop após o HTTP 201 ser enviado
- *   - Não há persistência: jobs perdidos em caso de restart viram documentos presos em PROCESSANDO
- *   - Mitigação documentada: ao iniciar o servidor, marcar PROCESSANDO > N min como ERRO
+ *   - O estado pendente é persistido em Documento.PROCESSANDO
+ *   - Na inicialização, recovery.js reenfileira os trabalhos interrompidos
  */
 
 let handler = null;

@@ -3,12 +3,13 @@
  *
  * Este módulo exporta o cliente correto de acordo com WATSONX_MOCK:
  *   - true  → mock em memória (desenvolvimento / testes)
- *   - false → cliente real (a ser implementado pela Pessoa B / US-08)
+ *   - false → embeddings IBM + pgvector persistente no PostgreSQL
  *
  * Contrato completo: docs/contracts/watsonx-client.md
  */
 
 import { env } from '../config/env.js';
+import { vectorClient } from './vectorClient.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock — armazena chunks em memória, por campanha → por documento
@@ -104,20 +105,10 @@ const mockClient = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cliente real — placeholder para a Pessoa B implementar (US-08)
+// Cliente persistente — embeddings IBM + PostgreSQL/pgvector
 // ─────────────────────────────────────────────────────────────────────────────
 
-const realClient = {
-  async indexChunks(_campanhaId, _chunks) {
-    throw new Error('Cliente watsonx real não implementado. Configure WATSONX_MOCK=true.');
-  },
-  async search(_campanhaId, _query, _opcoes) {
-    throw new Error('Cliente watsonx real não implementado. Configure WATSONX_MOCK=true.');
-  },
-  async deleteDocumentChunks(_campanhaId, _documentoId) {
-    throw new Error('Cliente watsonx real não implementado. Configure WATSONX_MOCK=true.');
-  },
-};
+const realClient = vectorClient;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Exportação — seleciona client conforme WATSONX_MOCK

@@ -1,5 +1,7 @@
 # Backend
 
+> Atualização: arquitetura de agente único implementada. Consulte o [guia de implantação](../docs/nova-arquitetura-implantacao.md) para o fluxo, as variáveis e as migrations atuais. Menções abaixo ao orquestrador ou ao RAG simulado descrevem o fluxo anterior.
+
 API Node.js/Express com módulos ES, Zod, PostgreSQL e Prisma. Campanhas, documentos, memória, analytics e busca RAG compartilham esse processo; a telefonia é um [serviço separado](telephony-handler/README.md).
 
 ## Organização atual

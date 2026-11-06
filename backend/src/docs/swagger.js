@@ -4,14 +4,14 @@ const options = {
   definition: {
     openapi: '3.0.3',
     info: {
-      title: 'Ponte — API de Campanhas e Documentos',
+      title: 'FALA — Agentes escolares e documentos',
       version: '1.0.0',
       description:
-        'API REST para gerenciamento de campanhas didáticas e documentos indexados via RAG no watsonx. ' +
+        'API REST de agentes escolares com RAG em PostgreSQL/pgvector e um único deployment watsonx. ' +
         'Parte da plataforma Ponte — ensino via chamada telefônica para regiões sensíveis.',
     },
     servers: [
-      { url: 'http://localhost:3000', description: 'Desenvolvimento local' },
+      { url: 'http://localhost:3001', description: 'Desenvolvimento local' },
     ],
     tags: [
       { name: 'Campanhas', description: 'CRUD de campanhas didáticas' },
@@ -21,6 +21,8 @@ const options = {
     ],
     components: {
       securitySchemes: {
+        schoolAuth: { type: 'http', scheme: 'bearer', description: 'Chave administrativa exclusiva da escola (SCHOOL_API_TOKENS).' },
+        internalAuth: { type: 'http', scheme: 'bearer', description: 'Chave entre serviços (INTERNAL_API_KEY).' },
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
@@ -36,11 +38,9 @@ const options = {
             slug: {
               type: 'string',
               nullable: true,
-              enum: ['historia', 'geografia', 'portugues', 'matematica', 'ciencias'],
               example: 'matematica',
               description:
-                'Identificador semântico. Usado pelo orquestrador watsonx como campanhaId para roteamento de voz. ' +
-                'Campanhas sem slug não aparecem em GET /campanhas/ativas.',
+                'Rótulo opcional por escola. A seleção e o RAG usam o ID real do agente.',
             },
             descricao: {
               type: 'string',

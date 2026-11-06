@@ -1,5 +1,7 @@
 # Pendências de implementação e aplicação
 
+> Atualização: arquitetura de agente único implementada. Consulte o [guia de implantação](nova-arquitetura-implantacao.md) para o fluxo, as variáveis e as migrations atuais. Menções abaixo ao orquestrador ou ao RAG simulado descrevem o fluxo anterior.
+
 Revisão de 05/11/2026, com base no código local. Este arquivo concentra apenas o trabalho que ainda precisa ser feito ou comprovado. Os planos antigos não são uma segunda lista de tarefas.
 
 ## 1. Atualizar o banco do ambiente da aplicação

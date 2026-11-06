@@ -1,0 +1,85 @@
+MATERIAL DE TESTE — TUTOR ESCOLAR FALA
+
+Este é um material fictício, criado para testar o envio de documentos e as respostas do agente educacional. As regras do projeto escolar abaixo servem somente para esta demonstração.
+Público: alunos do ensino fundamental.
+
+1. MATEMÁTICA — FRAÇÕES
+
+Uma fração representa partes iguais de um todo. Na fração 3/4, o número 3 é o numerador e indica quantas partes foram consideradas. O número 4 é o denominador e indica em quantas partes iguais o todo foi dividido.
+
+Exemplo: uma pizza foi dividida em oito fatias iguais. Se uma pessoa comeu duas fatias, ela comeu 2/8 da pizza. Essa fração equivale a 1/4.
+
+Frações equivalentes representam a mesma quantidade. Para obter uma fração equivalente, podemos multiplicar ou dividir o numerador e o denominador pelo mesmo número diferente de zero. Assim, 1/2, 2/4 e 4/8 representam a mesma quantidade.
+
+Para somar frações com o mesmo denominador, somamos os numeradores e mantemos o denominador. Exemplo: 1/5 + 2/5 = 3/5.
+
+2. CIÊNCIAS — FOTOSSÍNTESE
+
+Na fotossíntese, as plantas utilizam energia da luz para produzir açúcares a partir de água e gás carbônico. Durante esse processo, também liberam oxigênio.
+
+A clorofila é um pigmento que ajuda a captar a luz e contribui para a cor verde de muitas folhas. A água é absorvida principalmente pelas raízes, e o gás carbônico entra nas folhas por pequenas aberturas chamadas estômatos.
+
+Uma forma simples de lembrar os elementos da fotossíntese é: água, gás carbônico e luz participam da produção de açúcares e da liberação de oxigênio. Os açúcares ajudam a fornecer energia e matéria para o crescimento da planta.
+
+3. PORTUGUÊS — SUJEITO E PREDICADO
+
+Em uma oração, o sujeito é o termo sobre o qual se faz uma declaração. O predicado apresenta aquilo que é declarado sobre o sujeito.
+
+Na oração "Os alunos cuidam da horta", o sujeito é "Os alunos" e o predicado é "cuidam da horta". O verbo da oração é "cuidam".
+
+Na oração "A professora explicou a atividade", o sujeito é "A professora" e o predicado é "explicou a atividade". O verbo é "explicou".
+
+Para estudar esses exemplos, o aluno pode primeiro identificar o verbo e depois perguntar quem realiza a ação expressa por ele. Essa estratégia ajuda nos exemplos apresentados, mas nem todo sujeito representa alguém que realiza uma ação.
+
+4. GEOGRAFIA — PONTOS CARDEAIS
+
+Os quatro pontos cardeais são norte, sul, leste e oeste. Eles são usados para indicar direções e ajudar na orientação em mapas e no espaço.
+
+Em um mapa com o norte indicado para cima, o sul fica embaixo, o leste à direita e o oeste à esquerda. É necessário observar a indicação de orientação do mapa, pois ele pode estar apresentado em outra posição.
+
+O Brasil está localizado na América do Sul. A capital do Brasil é Brasília.
+
+5. PROJETO ESCOLAR FICTÍCIO — SEMENTE AZUL
+
+O projeto Semente Azul é uma atividade fictícia da turma do 6º ano. Seu objetivo é acompanhar a germinação e o crescimento do feijão, praticando observação, medição e registro.
+
+Para esta atividade de demonstração, cada grupo terá três estudantes e usará dois recipientes identificados como A e B. Os grupos registrarão suas observações em um caderno chamado Diário da Semente.
+
+No protocolo fictício do projeto Semente Azul, cada recipiente recebe vinte mililitros de água por dia. Essa quantidade é uma regra desta demonstração, não uma recomendação geral para qualquer cultivo.
+
+O acompanhamento do projeto Semente Azul terá duração de dez dias. A altura das plantas será medida em centímetros, sempre às quartas-feiras durante o período de acompanhamento. Os alunos também registrarão a cor das folhas e a presença de brotos.
+
+A apresentação final do projeto Semente Azul acontecerá na Sala Girassol. Cada grupo terá quatro minutos para explicar suas observações. A apresentação deve conter o desenho da planta, os registros de altura e uma conclusão sobre o que foi observado.
+
+Na avaliação fictícia do projeto Semente Azul, os registros no Diário da Semente valem quatro pontos, a participação do grupo vale três pontos e a apresentação final vale três pontos. A pontuação máxima é de dez pontos.
+
+Este material não informa a data de uma prova, o horário das aulas nem o nome de um professor responsável. Essas informações não devem ser inventadas pelo agente.
+
+6. PERGUNTAS PARA TESTAR O AGENTE
+
+Pergunta: O que representam o numerador e o denominador?
+Resposta esperada: O numerador indica quantas partes foram consideradas, e o denominador indica em quantas partes iguais o todo foi dividido.
+
+Pergunta: Quanto é um quinto mais dois quintos?
+Resposta esperada: Três quintos.
+
+Pergunta: Quais elementos participam da fotossíntese?
+Resposta esperada: Água, gás carbônico e luz participam da produção de açúcares e da liberação de oxigênio.
+
+Pergunta: Qual é o sujeito de "Os alunos cuidam da horta"?
+Resposta esperada: Os alunos.
+
+Pergunta: Quantos estudantes devem participar de cada grupo do Semente Azul?
+Resposta esperada: Três estudantes.
+
+Pergunta: Quanta água cada recipiente recebe por dia no Semente Azul?
+Resposta esperada: Vinte mililitros, conforme o protocolo fictício da atividade.
+
+Pergunta: Onde será a apresentação final e quanto tempo cada grupo terá?
+Resposta esperada: Na Sala Girassol, com quatro minutos para cada grupo.
+
+Pergunta: Como será distribuída a pontuação do projeto?
+Resposta esperada: Quatro pontos pelos registros, três pela participação e três pela apresentação, totalizando dez pontos.
+
+Pergunta: Qual é a data da prova da escola?
+Resultado esperado: O agente informa que não encontrou essa informação nos materiais e não inventa uma data.

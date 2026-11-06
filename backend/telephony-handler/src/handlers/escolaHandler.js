@@ -47,7 +47,7 @@ async function escolaHandler(req, res) {
       }
     } catch (err) {
       console.error(`[escola] Erro ao resolver código ${digits}: ${err.message}`, { callSid });
-      session.setEscola(callSid, null);
+      return res.type('text/xml').send(twiml.buildIndisponibilidadeTwiml());
     }
   } else {
     console.info(`[escola] CallSid=${callSid} sem código — fluxo geral`);
@@ -60,6 +60,7 @@ async function escolaHandler(req, res) {
     const conversa = await conversaClient.criarOuRecuperarConversa({
       chaveChamada: chave,
       versaoChave: versao,
+      codigoEscola: session.getEscola(callSid),
     });
     if (conversa.estado !== 'ATIVA') {
       console.warn('[escola] Conversa não está ativa:', { estado: conversa.estado });

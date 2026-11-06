@@ -61,6 +61,8 @@ export function serializeCampanhaDetalhe(campanha) {
   return {
     id: campanha.id,
     nome: campanha.nome,
+    escola_id: campanha.escolaId ?? null,
+    usa_rag: campanha.usaRag ?? true,
     ativa: campanha.ativa,
     instrucoes: campanha.descricao ?? null,
     criada_em: campanha.criadaEm,
@@ -90,6 +92,8 @@ export function serializeCampanhaResumo(campanha) {
   return {
     id: campanha.id,
     nome: campanha.nome,
+    escola_id: campanha.escolaId ?? null,
+    usa_rag: campanha.usaRag ?? true,
     ativa: campanha.ativa,
     criada_em: campanha.criadaEm,
     atualizada_em: campanha.atualizadaEm ?? campanha.criadaEm,

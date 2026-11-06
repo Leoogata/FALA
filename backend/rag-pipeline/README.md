@@ -1,5 +1,7 @@
 # Pipeline de documentos e RAG
 
+> Atualização: arquitetura de agente único implementada. Consulte o [guia de implantação](../../docs/nova-arquitetura-implantacao.md) para o fluxo, as variáveis e as migrations atuais. Menções abaixo ao orquestrador ou ao RAG simulado descrevem o fluxo anterior.
+
 A implementação está em [backend/src/rag](../src/rag), no processo da API.
 
 ## Funcionamento atual

@@ -14,7 +14,7 @@ async function getWatsonxClient() {
 export const campanhasController = {
   async criar(req, res, next) {
     try {
-      const campanha = await campanhasService.criar(req.body);
+      const campanha = await campanhasService.criar({ ...req.body, escolaId: req.escola.id });
       res.status(201).json(serializeCampanhaDetalhe(campanha));
     } catch (err) {
       next(err);
@@ -23,7 +23,7 @@ export const campanhasController = {
 
   async listar(req, res, next) {
     try {
-      const campanhas = await campanhasService.listar(req.query);
+      const campanhas = await campanhasService.listar({ ...req.query, escolaId: req.escola.id });
       res.json(campanhas.map(serializeCampanhaResumo));
     } catch (err) {
       next(err);
@@ -33,7 +33,7 @@ export const campanhasController = {
   async listarAtivasParaOrquestrador(req, res, next) {
     try {
       // ?escola=<codigo> filtra pela escola; sem ele, retorna o conteúdo geral
-      const codigoEscola = req.query.escola || undefined;
+      const codigoEscola = req.escola.codigo;
       const campanhas = await campanhasService.listarAtivasParaOrquestrador({ codigoEscola });
       res.json(campanhas);
     } catch (err) {

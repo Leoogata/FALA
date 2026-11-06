@@ -18,10 +18,11 @@ function authHeaders() {
  * @param {{ chaveChamada: string, versaoChave: string }} params
  * @returns {Promise<{ conversa_id: string, estado: string }>}
  */
-async function criarOuRecuperarConversa({ chaveChamada, versaoChave }) {
+async function criarOuRecuperarConversa({ chaveChamada, versaoChave, codigoEscola }) {
   const response = await axios.post(
     `${config.backendApiUrl}/internal/conversas`,
-    { chave_chamada: chaveChamada, versao_chave: versaoChave },
+    { chave_chamada: chaveChamada, versao_chave: versaoChave,
+      ...(codigoEscola !== undefined ? { codigo_escola: codigoEscola } : {}) },
     { headers: authHeaders(), timeout: config.conversaClientTimeoutMs }
   );
   return response.data;

@@ -57,6 +57,7 @@ model Escola {
   criadaEm  DateTime   @default(now()) @map("criada_em")
 
   campanhas Campanha[]
+  trechos   DocumentoTrecho[]
 
   @@map("escolas")
 }
@@ -67,24 +68,23 @@ model Campanha {
   // Escola dona desta campanha. Nullable: campanhas sem escola formam o
   // "conteúdo geral" (quando o aluno não digita um código na ligação).
   escolaId     String?    @map("escola_id")
-  // Identificador semântico para integração com o agente watsonx.
-  // Nullable — campanhas sem slug não aparecem no roteamento de voz.
-  // Valores válidos: historia | geografia | portugues | matematica | ciencias | informatica | ...
-  // Não é @unique global — a unicidade é por escola (@@unique abaixo).
+  // Rótulo opcional, sem participação na seleção do agente ou na busca RAG.
   slug         String?
   // System prompt do agente educacional desta campanha.
   // Nullable — campanhas sem descricao usam o prompt padrão do agente.
   descricao    String?
-  ativa        Boolean  @default(true)
+  usaRag       Boolean  @default(true) @map("usa_rag")
+  ativa        Boolean  @default(false)
   criadaEm     DateTime @default(now()) @map("criada_em")
   atualizadaEm DateTime @default(now()) @updatedAt @map("atualizada_em")
 
-  escola       Escola?     @relation(fields: [escolaId], references: [id], onDelete: SetNull)
+  escola       Escola?     @relation(fields: [escolaId], references: [id], onDelete: Restrict)
   documentos   Documento[]
   interacoes   Interacao[]
+  trechos      DocumentoTrecho[]
 
   // slug é único POR escola (duas escolas podem ter cada uma a sua "historia").
-  // Campanhas sem escola (escolaId null) compartilham o espaço de slug "geral".
+  // Registros legados sem escola não são usados pelo agente padrão.
   @@unique([escolaId, slug])
   @@map("campanhas")
 }
@@ -102,9 +102,28 @@ model Documento {
   atualizadoEm    DateTime        @default(now()) @updatedAt @map("atualizado_em")
 
   campanha Campanha @relation(fields: [campanhaId], references: [id], onDelete: Restrict)
+  trechos DocumentoTrecho[]
 
   @@index([campanhaId])
   @@map("documentos")
+}
+
+model DocumentoTrecho {
+  id          BigInt @id @default(autoincrement())
+  documentoId String @map("documento_id")
+  agenteId    String @map("agente_id")
+  escolaId    String @map("escola_id")
+  ordem       Int
+  texto       String
+  modelo      String
+  embedding   Unsupported("vector(768)")
+  documento   Documento @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  agente      Campanha @relation(fields: [agenteId], references: [id], onDelete: Cascade)
+  escola      Escola @relation(fields: [escolaId], references: [id], onDelete: Restrict)
+
+  @@unique([documentoId, ordem])
+  @@index([escolaId, agenteId], map: "documento_trechos_escopo")
+  @@map("documento_trechos")
 }
 
 model Conversa {
@@ -116,6 +135,9 @@ model Conversa {
   ultima_atividade_em DateTime       @default(now()) @map("ultima_atividade_em") @db.Timestamptz
   encerrada_em        DateTime?      @map("encerrada_em") @db.Timestamptz
   expira_em           DateTime       @map("expira_em") @db.Timestamptz
+  escolaId            String?        @map("escola_id")
+  agenteId            String?        @map("agente_id")
+  instrucoesAgente     String?        @map("instrucoes_agente")
 
   interacoes Interacao[]
 
@@ -142,6 +164,7 @@ model Interacao {
   score_confianca_agente       Float?          @map("score_confianca_agente")
   duracao_ms                   Int?            @map("duracao_ms")
   versao_prompt                String?         @map("versao_prompt")
+  fontes                       Json?
   // Lease para controle de concorrência: execucao_id identifica quem detém o processamento
   execucao_id                  String?         @map("execucao_id") @db.Uuid
   lease_expira_em              DateTime?       @map("lease_expira_em") @db.Timestamptz

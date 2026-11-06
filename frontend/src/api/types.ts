@@ -9,6 +9,8 @@ export interface DocsCount {
 export interface AgenteResumo {
   id: string;
   nome: string;
+  escola_id?: string | null;
+  usa_rag?: boolean;
   ativa: boolean;
   criada_em: string;
   atualizada_em: string;
@@ -53,6 +55,8 @@ export interface RespostaTestar {
   resposta: string;
   confianca: number;
   sem_resposta: boolean;
+  precisa_esclarecimento?: boolean;
+  pergunta_esclarecimento?: string;
 }
 
 export interface RespostaRemoverMaterial {

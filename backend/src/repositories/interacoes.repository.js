@@ -10,7 +10,8 @@ export const interacoesRepository = {
   async criar({ campanhaId, pergunta, resposta, scoreConfiancaStt, scoreConfiancaAgente, semResposta, callSid }) {
     const agora = new Date();
     const campanha = await prisma.campanha.findFirst({
-      where: { OR: [{ id: campanhaId }, { slug: campanhaId }] },
+      // A ingestão legada só resolve conteúdo geral; slugs escolares podem se repetir.
+      where: { escolaId: null, OR: [{ id: campanhaId }, { slug: campanhaId }] },
       select: { id: true, slug: true },
     });
     const materia = campanha?.slug ?? campanhaId;

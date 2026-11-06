@@ -23,7 +23,7 @@ export const INSTRUCOES_MAX = 4000;
 export const POLLING_DOCUMENTOS_MS = 3000;
 export const POLLING_LISTA_MS = 5000;
 export const TIMEOUT_PADRAO_MS = 15000;
-export const TIMEOUT_IA_MS = 30000;
+export const TIMEOUT_IA_MS = 45000;
 
 // ─── Regras fixas da Ponte ───────────────────────────────────────────────────
 export const REGRAS_FIXAS = [

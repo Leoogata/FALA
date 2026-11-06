@@ -10,6 +10,7 @@ import { AbaInstrucoesPage } from './pages/AbaInstrucoesPage';
 import { AbaTestarPage } from './pages/AbaTestarPage';
 import { AbaLigacaoPage } from './pages/AbaLigacaoPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { SchoolGate } from './components/layout/SchoolGate';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,7 +42,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <RouterProvider router={router} />
+        <SchoolGate><RouterProvider router={router} /></SchoolGate>
       </ToastProvider>
     </QueryClientProvider>
   );

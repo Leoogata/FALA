@@ -122,7 +122,7 @@ export function MaterialList({ agente, materiais, setMateriais }: Props) {
           </p>
           {isUltimoPronte && (
             <div className="mt-3 bg-[var(--draft-bg)] text-[var(--draft)] text-xs rounded-lg p-3">
-              Este é o único material pronto. Como o agente está ativo, ele será <strong>desativado</strong> e sairá do menu da ligação.
+              Este é o único material pronto. Como o agente está ativo, ele será <strong>desativado</strong> e deixará de atender novas ligações da escola.
             </div>
           )}
         </ConfirmModal>

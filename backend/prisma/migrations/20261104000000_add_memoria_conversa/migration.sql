@@ -1,22 +1,10 @@
+-- A tabela conversas é criada na migration estrutural 20261103000000.
 -- Estende a tabela criada em 20241023000004; não cria outra tabela interacoes.
 -- Preserva IDs/textos antigos e substitui call_sid por associação aleatória.
 BEGIN;
 
-CREATE TYPE "ConversaEstado" AS ENUM ('ATIVA', 'ENCERRADA', 'EXPIRADA');
 CREATE TYPE "InteracaoStatus" AS ENUM ('RECEBIDO', 'RESPONDIDO', 'ESCLARECIMENTO', 'SEM_ROTA', 'SEM_RESPOSTA', 'ERRO');
 CREATE TYPE "Materia" AS ENUM ('historia', 'geografia', 'portugues', 'matematica', 'ciencias');
-
-CREATE TABLE "conversas" (
-    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "chave_chamada" TEXT NOT NULL,
-    "versao_chave" TEXT NOT NULL,
-    "estado" "ConversaEstado" NOT NULL DEFAULT 'ATIVA',
-    "criada_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "ultima_atividade_em" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "encerrada_em" TIMESTAMPTZ,
-    "expira_em" TIMESTAMPTZ NOT NULL,
-    CONSTRAINT "conversas_pkey" PRIMARY KEY ("id")
-);
 
 ALTER TABLE "interacoes"
     ALTER COLUMN "campanha_id" DROP NOT NULL,
@@ -78,10 +66,15 @@ UPDATE "interacoes" i SET "ordem" = ordenadas.ordem FROM ordenadas WHERE i."id" 
 
 -- O contrato anterior armazenava slug; o histórico novo usa a FK real e
 -- conserva a matéria separadamente, inclusive se a campanha não existir mais.
-UPDATE "interacoes" i SET "campanha_id" = (
-    SELECT c."id" FROM "campanhas" c
-    WHERE c."id" = i."campanha_id" OR c."slug" = i."campanha_id"
-    LIMIT 1
+-- Sem informação de escola no registro antigo, não escolher uma escola
+-- arbitrariamente quando o slug existir em mais de uma campanha.
+UPDATE "interacoes" i SET "campanha_id" = COALESCE(
+    (SELECT c."id" FROM "campanhas" c WHERE c."id" = i."campanha_id"),
+    (SELECT MIN(c."id") FROM "campanhas" c
+     WHERE c."slug" = i."campanha_id" AND c."escola_id" IS NULL
+     HAVING COUNT(*) = 1),
+    (SELECT MIN(c."id") FROM "campanhas" c
+     WHERE c."slug" = i."campanha_id" HAVING COUNT(*) = 1)
 );
 
 ALTER TABLE "interacoes"
@@ -94,8 +87,6 @@ ALTER TABLE "interacoes"
     DROP COLUMN "call_sid",
     DROP COLUMN "criado_em";
 
-CREATE UNIQUE INDEX "conversas_chave_chamada_key" ON "conversas"("chave_chamada");
-CREATE INDEX "conversas_expira_em_idx" ON "conversas"("expira_em");
 CREATE UNIQUE INDEX "interacoes_turno_token_key" ON "interacoes"("turno_token");
 CREATE UNIQUE INDEX "interacoes_conversa_id_ordem_key" ON "interacoes"("conversa_id", "ordem");
 CREATE INDEX "interacoes_conversa_id_recebida_em_idx" ON "interacoes"("conversa_id", "recebida_em");

@@ -15,8 +15,9 @@ import { createError } from '../middlewares/errorHandler.js';
  */
 export async function postConversa(req, res, next) {
   try {
-    const { chave_chamada, versao_chave } = req.body;
-    const conversa = await upsertConversa({ chaveChamada: chave_chamada, versaoChave: versao_chave });
+    const { chave_chamada, versao_chave, codigo_escola } = req.body;
+    const conversa = await upsertConversa({ chaveChamada: chave_chamada, versaoChave: versao_chave,
+      ...(codigo_escola !== undefined ? { codigoEscola: codigo_escola } : {}) });
 
     if (conversa.estado === 'EXPIRADA') {
       return next(createError(410, 'Conversa expirada'));
@@ -25,7 +26,8 @@ export async function postConversa(req, res, next) {
       return next(createError(410, 'Conversa encerrada'));
     }
 
-    return res.status(200).json({ conversa_id: conversa.id, estado: conversa.estado });
+    return res.status(200).json({ conversa_id: conversa.id, estado: conversa.estado,
+      escola_id: conversa.escolaId ?? null, agente_id: conversa.agenteId ?? null });
   } catch (err) {
     return next(err);
   }
@@ -116,6 +118,7 @@ export async function postInteracao(req, res, next) {
       scoreConfiancaAgente: score_confianca_agente ?? null,
       duracaoMs: duracao_ms ?? null,
       versaoPrompt: versao_prompt ?? null,
+      fontes: req.body.fontes ?? [],
     });
 
     return res.status(200).json(resultado);

@@ -73,12 +73,12 @@ test('contrato legado mantém compatibilidade sem capturar finalização malform
   expect(legado.registrar).toHaveBeenCalledTimes(1);
 });
 
-test('busca por matéria recupera os documentos indexados pelo ID real', async () => {
-  campanhas.buscarAtivaPorReferencia.mockResolvedValue({ id: 'campanha-real', slug: 'historia' });
+test('busca RAG exige ID real e escola e recupera os documentos indexados', async () => {
+  campanhas.buscarAtivaPorReferencia.mockResolvedValue({ id: 'campanha-real', escolaId: 'escola-1' });
   await watsonxClient.indexChunks('campanha-real', [{ documentoId: 'doc-1', ordem: 0, texto: 'Independência do Brasil.' }]);
   const res = await request(app).get('/rag/search').set('Authorization', `Bearer ${process.env.RAG_INTERNAL_TOKEN}`)
-    .query({ campanhaId: 'historia', query: 'Independência' });
+    .query({ campanhaId: 'campanha-real', escolaId: 'escola-1', query: 'Independência' });
   expect(res.status).toBe(200);
   expect(res.body.resultados[0].texto).toBe('Independência do Brasil.');
-  expect(campanhas.buscarAtivaPorReferencia).toHaveBeenCalledWith('historia');
+  expect(campanhas.buscarAtivaPorReferencia).toHaveBeenCalledWith('campanha-real', 'escola-1');
 });

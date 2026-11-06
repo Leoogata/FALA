@@ -15,7 +15,7 @@ export const analyticsRepository = {
           1
         )::float                                                               AS "percentualSemResposta"
       FROM interacoes
-      WHERE (materia::text = ${campanhaId} OR campanha_id = ${campanhaId})
+      WHERE campanha_id = ${campanhaId}
         AND expira_em > NOW()
         AND status <> 'RECEBIDO'
     `;
@@ -32,7 +32,7 @@ export const analyticsRepository = {
         pergunta,
         COUNT(*)::int AS total
       FROM interacoes
-      WHERE (materia::text = ${campanhaId} OR campanha_id = ${campanhaId})
+      WHERE campanha_id = ${campanhaId}
         AND expira_em > NOW()
         AND status <> 'RECEBIDO'
         AND pergunta IS NOT NULL AND NOT texto_suprimido
@@ -52,7 +52,7 @@ export const analyticsRepository = {
         TO_CHAR(DATE(recebida_em), 'YYYY-MM-DD') AS data,
         COUNT(*)::int                          AS total
       FROM interacoes
-      WHERE (materia::text = ${campanhaId} OR campanha_id = ${campanhaId})
+      WHERE campanha_id = ${campanhaId}
         AND expira_em > NOW()
         AND status <> 'RECEBIDO'
         AND recebida_em >= NOW() - (${dias} || ' days')::interval

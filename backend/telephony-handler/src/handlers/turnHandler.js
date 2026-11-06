@@ -6,23 +6,19 @@ const config = require('../config');
 const twiml = require('../services/twiml');
 const tts = require('../services/tts');
 const session = require('../services/callSession');
-const orchestrator = require('../services/orchestrator');
 const agentEducational = require('../services/agentEducational');
-const campanhas = require('../services/campanhas');
 const conversaClient = require('../services/conversaClient');
 const { sanitizar } = require('../services/sanitizacao');
 
 /**
  * POST /voice/turn
- * Processa o resultado do <Gather> e orquestra:
+ * Processa o resultado do <Gather>:
  *   1. Valida CallSid e recupera/inicializa conversa
  *   2. Validação STT (falha incrementa tentativas, não apaga histórico)
  *   3. Sanitiza pergunta e reserva turno no banco (idempotente por turno_token)
- *   4. Recupera contexto das trocas anteriores
- *   5. Roteamento com histórico
- *   6. Subagente educacional com histórico
- *   7. Finaliza turno com resultado confirmado no banco
- *   8. Retorna TwiML com novo token para próxima captura
+ *   4. Solicita uma resposta ao backend usando a conversa persistida
+ *   5. Finaliza turno com resultado confirmado no banco
+ *   6. Retorna TwiML com novo token para próxima captura
  */
 async function turnHandler(req, res) {
   const inicio = Date.now();
@@ -49,6 +45,7 @@ async function turnHandler(req, res) {
       const conversa = await conversaClient.criarOuRecuperarConversa({
         chaveChamada: chave,
         versaoChave: versao,
+        codigoEscola: session.getEscola(callSid),
       });
       if (conversa.estado !== 'ATIVA') {
         return res.type('text/xml').send(twiml.buildIndisponibilidadeTwiml());
@@ -99,7 +96,6 @@ async function turnHandler(req, res) {
   const { texto: perguntaSanitizada, suprimido } = sanitizar(speechResult);
 
   // ── Reserva do turno no banco ──────────────────────────────────────────────
-  let interacaoId;
   let turnoJaExistia = false;
   let turnoJaConcluido = false;
   let mensagemRetornoSalva = null;
@@ -110,7 +106,6 @@ async function turnHandler(req, res) {
       pergunta: perguntaSanitizada,
       textoSuprimido: suprimido,
     });
-    interacaoId = turno.interacao_id;
     turnoJaExistia = turno.ja_existia;
     // turno já finalizado se concluida_em presente (ou status terminal)
     const statusTerminal = ['RESPONDIDO', 'ESCLARECIMENTO', 'SEM_ROTA', 'SEM_RESPOSTA', 'ERRO'];
@@ -138,112 +133,19 @@ async function turnHandler(req, res) {
     return res.type('text/xml').send(twiml.buildIndisponibilidadeTwiml());
   }
 
-  // ── Recuperação de contexto ────────────────────────────────────────────────
-  let historico = [];
+  // O backend recupera a configuração persistida, o histórico e os documentos.
+  // Uma única geração atende à pergunta, sem classificação de matéria.
+  let agentResult;
   try {
-    historico = await conversaClient.buscarContexto(conversaId);
+    agentResult = await agentEducational.answerQuestion({ conversaId, turnoToken });
   } catch (err) {
-    // Falha na leitura de contexto — não processar silenciosamente como primeira pergunta
-    console.error('[turn] Falha ao buscar contexto:', err.message);
-    await _finalizarComErro({ conversaId, turnoToken, interacaoId, inicio });
+    console.error('[turn] Falha ao gerar resposta:', err.message);
+    await _finalizarComErro({ conversaId, turnoToken, inicio });
     return res.type('text/xml').send(twiml.buildIndisponibilidadeTwiml());
   }
-
-  // Pergunta para envio ao modelo (sanitizada ou indicação de supressão)
-  const perguntaParaModelo = suprimido
-    ? '[Texto suprimido por conteúdo não sanitizável]'
-    : (perguntaSanitizada || '');
-
-  // ── Roteamento ────────────────────────────────────────────────────────────
-  // Mede a latência sem registrar transcrições ou identificadores do provedor.
-  const ms = (desde) => `${Date.now() - desde}ms`;
-
-  // --- Roteamento ---
-  let routeResult;
-  let campanhasAtivas = [];
-  let campanhaRealId = null;
-
-  const tRota = Date.now();
-  try {
-    // Filtra campanhas pela escola escolhida na URA (null = conteúdo geral)
-    const codigoEscola = session.getEscola(callSid);
-    campanhasAtivas = await campanhas.getCampanhasAtivas(codigoEscola);
-    routeResult = await orchestrator.routeQuestion({ pergunta: perguntaParaModelo, campanhasAtivas, historico });
-    console.info(`[latencia] roteamento=${ms(tRota)} escola=${codigoEscola ?? 'geral'}`, { conversaId });
-  } catch (err) {
-    console.error('[turn] Erro no roteamento:', err.message);
-    try {
-      await _finalizarSemRota({ conversaId, turnoToken, inicio, mensagem: config.fallbackMessages.semRota });
-    } catch (gravaErr) {
-      console.error('[turn] Falha ao gravar sem_rota após erro de roteamento:', gravaErr.message);
-      return res.type('text/xml').send(twiml.buildIndisponibilidadeTwiml());
-    }
-    const proximoToken = randomUUID();
-    session.setTurnoToken(callSid, proximoToken);
-    return res.type('text/xml').send(twiml.buildNoRouteTwiml(proximoToken));
-  }
-
-  const { campanhaId, confianca: confidenceOrchestrator, sem_rota, precisa_esclarecimento, pergunta_esclarecimento } = routeResult;
-
-  // Resolver ID real da campanha no banco
-  const campanhaAtiva = campanhasAtivas.find((c) => c.campanhaId === campanhaId);
-  campanhaRealId = campanhaAtiva?.id ?? null;
-
-  if (precisa_esclarecimento && pergunta_esclarecimento) {
-    const { texto: esclarecimentoSanitizado, suprimido: esclarecimentoSuprimido } = sanitizar(pergunta_esclarecimento);
-    // Se a sanitização suprimiu o texto, usar mensagem segura genérica em vez do texto original
-    const textoEsclarecimento = esclarecimentoSuprimido
-      ? config.fallbackMessages.semRota
-      : (esclarecimentoSanitizado || config.fallbackMessages.semRota);
-    try {
-      await _finalizarEsclarecimento({
-        conversaId, turnoToken, campanhaRealId, campanhaId,
-        perguntaEsclarecimento: textoEsclarecimento,
-        scoreConfiancaStt: confidenceStt,
-        scoreConfiancaOrquestrador: confidenceOrchestrator,
-        inicio,
-      });
-    } catch (err) {
-      console.error('[turn] Falha ao gravar esclarecimento (orquestrador):', err.message);
-      return res.type('text/xml').send(twiml.buildIndisponibilidadeTwiml());
-    }
-    const proximoToken = randomUUID();
-    session.setTurnoToken(callSid, proximoToken);
-    return res.type('text/xml').send(twiml.buildEsclarecimentoTwiml(textoEsclarecimento, proximoToken));
-  }
-
-  if (sem_rota || confidenceOrchestrator < config.orchestratorConfidenceThreshold) {
-    try {
-      await _finalizarSemRota({
-        conversaId, turnoToken, campanhaRealId, campanhaId,
-        scoreConfiancaStt: confidenceStt,
-        scoreConfiancaOrquestrador: confidenceOrchestrator,
-        inicio,
-        mensagem: config.fallbackMessages.semRota,
-      });
-    } catch (err) {
-      console.error('[turn] Falha ao gravar sem_rota:', err.message);
-      return res.type('text/xml').send(twiml.buildIndisponibilidadeTwiml());
-    }
-    const proximoToken = randomUUID();
-    session.setTurnoToken(callSid, proximoToken);
-    return res.type('text/xml').send(twiml.buildNoRouteTwiml(proximoToken));
-  }
-
-  // ── Subagente educacional ─────────────────────────────────────────────────
-  let agentResult;
-  const tAgente = Date.now();
-  try {
-    agentResult = await agentEducational.answerQuestion({
-      campanhaId,
-      pergunta: perguntaParaModelo,
-      historico,
-    });
-    console.info(`[latencia] subagente=${ms(tAgente)}`, { conversaId });
-  } catch (err) {
-    console.error('[turn] Erro no subagente:', err.message);
-    agentResult = { resposta: '', confianca: 0, sem_resposta: true, precisa_esclarecimento: false, pergunta_esclarecimento: '' };
-  }
+  const campanhaRealId = agentResult.campanha_id ?? null;
+  const fontes = agentResult.fontes ?? [];
+  const versaoPrompt = agentResult.versao_prompt ?? config.versaoPrompt;
 
   const {
     resposta,
@@ -264,14 +166,13 @@ async function turnHandler(req, res) {
       : (mensagemSanitizada || config.fallbackMessages.semResposta);
     try {
       await _concluirTurno({
-        conversaId, turnoToken, campanhaRealId, campanhaId,
+        conversaId, turnoToken, campanhaRealId, fontes, versaoPrompt,
         resposta: null,
         mensagemRetorno: textoEsclarecimentoAgente,
         status: 'ESCLARECIMENTO',
         textoSuprimido: false,
         semResposta: true,
         scoreConfiancaStt: confidenceStt,
-        scoreConfiancaOrquestrador: confidenceOrchestrator,
         scoreConfiancaAgente: confidenceAgent,
         duracaoMs,
       });
@@ -287,14 +188,13 @@ async function turnHandler(req, res) {
   if (sem_resposta) {
     try {
       await _concluirTurno({
-        conversaId, turnoToken, campanhaRealId, campanhaId,
+        conversaId, turnoToken, campanhaRealId, fontes, versaoPrompt,
         resposta: null,
         mensagemRetorno: config.fallbackMessages.semResposta,
         status: 'SEM_RESPOSTA',
         textoSuprimido: false,
         semResposta: true,
         scoreConfiancaStt: confidenceStt,
-        scoreConfiancaOrquestrador: confidenceOrchestrator,
         scoreConfiancaAgente: confidenceAgent,
         duracaoMs,
       });
@@ -314,14 +214,13 @@ async function turnHandler(req, res) {
 
   try {
     await _concluirTurno({
-      conversaId, turnoToken, campanhaRealId, campanhaId,
+      conversaId, turnoToken, campanhaRealId, fontes, versaoPrompt,
       resposta: respostaSuprimida ? null : respostaSanitizada,
       mensagemRetorno: mensagemFinal,
       status: statusFinal,
       textoSuprimido: respostaSuprimida,
       semResposta: respostaSuprimida,
       scoreConfiancaStt: confidenceStt,
-      scoreConfiancaOrquestrador: confidenceOrchestrator,
       scoreConfiancaAgente: confidenceAgent,
       duracaoMs,
     });
@@ -348,26 +247,26 @@ async function gerarAudio(texto) {
 // ── Helpers de finalização ─────────────────────────────────────────────────
 
 async function _concluirTurno({
-  conversaId, turnoToken, campanhaRealId, campanhaId,
+  conversaId, turnoToken, campanhaRealId, fontes, versaoPrompt,
   resposta, mensagemRetorno, status, textoSuprimido, semResposta,
-  scoreConfiancaStt, scoreConfiancaOrquestrador, scoreConfiancaAgente, duracaoMs,
+  scoreConfiancaStt, scoreConfiancaAgente, duracaoMs,
 }) {
   // Re-lança sempre — chamador deve tratar e retornar indisponibilidade
   await conversaClient.concluirTurno({
     conversa_id: conversaId,
     turno_token: turnoToken,
     campanha_id: campanhaRealId ?? null,
-    materia: campanhaId ?? null,
+    materia: null,
     resposta: resposta ?? null,
     mensagem_retorno: mensagemRetorno,
     status,
     texto_suprimido: textoSuprimido,
     sem_resposta: semResposta,
     score_confianca_stt: scoreConfiancaStt ?? null,
-    score_confianca_orquestrador: scoreConfiancaOrquestrador ?? null,
     score_confianca_agente: scoreConfiancaAgente ?? null,
     duracao_ms: duracaoMs ?? null,
-    versao_prompt: config.versaoPrompt ?? null,
+    versao_prompt: versaoPrompt ?? null,
+    fontes,
   });
 }
 
@@ -387,45 +286,6 @@ async function _finalizarComErro({ conversaId, turnoToken, inicio }) {
       duracao_ms: duracaoMs,
     });
   } catch (_) { /* melhor-esforço para erros internos */ }
-}
-
-// Lança em caso de falha — chamadores devem capturar e retornar indisponibilidade
-async function _finalizarSemRota({ conversaId, turnoToken, campanhaRealId, campanhaId, scoreConfiancaStt, scoreConfiancaOrquestrador, inicio, mensagem }) {
-  const duracaoMs = Date.now() - inicio;
-  await conversaClient.concluirTurno({
-    conversa_id: conversaId,
-    turno_token: turnoToken,
-    campanha_id: campanhaRealId ?? null,
-    materia: campanhaId ?? null,
-    resposta: null,
-    mensagem_retorno: mensagem || '',
-    status: 'SEM_ROTA',
-    texto_suprimido: false,
-    sem_resposta: false,
-    score_confianca_stt: scoreConfiancaStt ?? null,
-    score_confianca_orquestrador: scoreConfiancaOrquestrador ?? null,
-    duracao_ms: duracaoMs,
-  });
-}
-
-// Lança em caso de falha — chamadores devem capturar e retornar indisponibilidade
-async function _finalizarEsclarecimento({ conversaId, turnoToken, campanhaRealId, campanhaId, perguntaEsclarecimento, scoreConfiancaStt, scoreConfiancaOrquestrador, inicio }) {
-  const duracaoMs = Date.now() - inicio;
-  await conversaClient.concluirTurno({
-    conversa_id: conversaId,
-    turno_token: turnoToken,
-    campanha_id: campanhaRealId ?? null,
-    materia: campanhaId ?? null,
-    resposta: null,
-    mensagem_retorno: perguntaEsclarecimento,
-    status: 'ESCLARECIMENTO',
-    texto_suprimido: false,
-    sem_resposta: true,
-    score_confianca_stt: scoreConfiancaStt ?? null,
-    score_confianca_orquestrador: scoreConfiancaOrquestrador ?? null,
-    duracao_ms: duracaoMs,
-  });
-
 }
 
 module.exports = turnHandler;
