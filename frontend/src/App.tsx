@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { createBrowserRouter, createHashRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from './components/ui/Toast';
 import { AgentesPage } from './pages/AgentesPage';
@@ -21,7 +21,8 @@ const queryClient = new QueryClient({
   },
 });
 
-const router = createBrowserRouter([
+const createRouter = import.meta.env.BASE_URL === '/FALA/' ? createHashRouter : createBrowserRouter;
+const router = createRouter([
   { path: '/', element: <Navigate to="/agentes" replace /> },
   { path: '/agentes', element: <AgentesPage /> },
   { path: '/agentes/novo', element: <NovoAgentePage /> },
