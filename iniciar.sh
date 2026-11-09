@@ -15,13 +15,33 @@ PIDS=()
 
 if [[ "${1:-}" == '--help' || "${1:-}" == '-h' ]]; then
   cat <<'HELP'
-Uso: ./iniciar.sh
+Uso: ./iniciar.sh [--help]
 
-Inicia backend, telefonia e painel. Ctrl+C encerra os três.
-Instala dependências ausentes e atualiza o cliente Prisma antes de iniciar.
-Configure backend/.env e backend/telephony-handler/.env previamente.
+Inicia backend (API), telephony-handler e painel em paralelo.
+Ctrl+C encerra os três serviços ao mesmo tempo.
 
-Portas opcionais: FALA_BACKEND_PORT, FALA_TELEFONIA_PORT, FALA_FRONTEND_PORT.
+Pré-requisitos:
+  1. Node.js 20+
+  2. backend/.env            (copie backend/.env.example)
+  3. backend/telephony-handler/.env  (copie backend/telephony-handler/.env.example)
+
+O script faz automaticamente:
+  - Instala dependências ausentes (npm install) em cada módulo
+  - Gera o cliente Prisma (prisma generate)
+  - Expõe os três serviços com logs prefixados pelo nome do serviço
+
+Portas padrão (sobrescreva com variáveis de ambiente):
+  FALA_BACKEND_PORT    → 3001  (API backend)
+  FALA_TELEFONIA_PORT  → 3000  (telephony-handler)
+  FALA_FRONTEND_PORT   → 5173  (painel web)
+
+Exemplo com portas customizadas:
+  FALA_BACKEND_PORT=4001 ./iniciar.sh
+
+URLs após a inicialização:
+  Painel:    http://localhost:$FALA_FRONTEND_PORT (padrão: 5173)
+  API:       http://localhost:$FALA_BACKEND_PORT  (padrão: 3001)
+  Telefonia: http://localhost:$FALA_TELEFONIA_PORT (padrão: 3000)
 HELP
   exit 0
 fi

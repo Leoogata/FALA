@@ -23,15 +23,68 @@ O repositório contém painel web, API de campanhas e documentos, handler de voz
 
 ## Por onde começar
 
-Para iniciar backend, telefonia e painel juntos, configure os arquivos `.env` dos dois serviços e execute na raiz:
+### Pré-requisitos
+
+- **Node.js 20+** — verifique com `node --version`
+- **npm** — incluído no Node.js
+- Conta **PostgreSQL** acessível (Supabase ou local) com as migrations aplicadas
+- Credenciais IBM watsonx, Twilio e ElevenLabs (opcionais para desenvolvimento)
+
+### 1. Copiar os arquivos de variáveis de ambiente
+
+```sh
+cp backend/.env.example          backend/.env
+cp backend/telephony-handler/.env.example  backend/telephony-handler/.env
+```
+
+O frontend não precisa de `.env` próprio — o `iniciar.sh` injeta `VITE_API_URL` e `VITE_USE_MOCK` automaticamente.
+
+### 2. Preencher os `.env`
+
+Edite `backend/.env` e `backend/telephony-handler/.env` com os valores reais:
+
+| Arquivo | Variáveis obrigatórias |
+| --- | --- |
+| `backend/.env` | `DATABASE_URL`, `DIRECT_URL`, `INTERNAL_API_KEY`, `RAG_INTERNAL_TOKEN` |
+| `backend/telephony-handler/.env` | `INTERNAL_API_KEY` (igual ao backend), `BACKEND_API_URL`, `HMAC_SECRET` |
+
+Gere chaves aleatórias com:
+
+```sh
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### 3. Iniciar tudo com um único comando
+
+Na raiz do repositório:
 
 ```sh
 ./iniciar.sh
 ```
 
-O script instala dependências ausentes, atualiza o cliente Prisma e mostra os logs dos três serviços. Acesse o painel em `http://localhost:5173`. Use **Ctrl+C** para encerrar tudo; se um serviço falhar, os demais também são encerrados. O banco Supabase e o deployment IBM são os configurados nos arquivos `.env`.
+O script:
+- verifica os pré-requisitos (Node 20+, portas livres, `.env` presentes)
+- instala dependências ausentes em cada módulo
+- atualiza o cliente Prisma (`prisma generate`)
+- inicia backend, telephony-handler e painel em paralelo, com logs prefixados por serviço
 
-Se precisar mudar as portas, use `FALA_BACKEND_PORT`, `FALA_TELEFONIA_PORT` e `FALA_FRONTEND_PORT`. Veja `./iniciar.sh --help`.
+Acesse o painel em `http://localhost:5173`. Use **Ctrl+C** para encerrar os três serviços ao mesmo tempo.
+
+### Portas e variáveis de ambiente opcionais
+
+| Variável | Padrão | Serviço |
+| --- | --- | --- |
+| `FALA_BACKEND_PORT` | `3001` | API backend |
+| `FALA_TELEFONIA_PORT` | `3000` | Telephony handler |
+| `FALA_FRONTEND_PORT` | `5173` | Painel web |
+
+```sh
+FALA_BACKEND_PORT=4001 ./iniciar.sh
+```
+
+Veja todas as opções com `./iniciar.sh --help`.
+
+### Referências detalhadas
 
 1. [Arquitetura e funcionamento atual](docs/architecture.md).
 2. [Instalação e atualização do backend](backend/README.md).

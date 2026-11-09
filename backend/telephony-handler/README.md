@@ -43,6 +43,18 @@ Localmente, o backend principal normalmente fica em `http://localhost:3001`. No 
 
 ## Execução e testes
 
+### Forma recomendada — iniciar tudo junto
+
+Para subir backend, telephony-handler e painel de uma vez, use o script na raiz do repositório:
+
+```sh
+./iniciar.sh
+```
+
+Ele instala dependências, gera o cliente Prisma e exibe os logs dos três serviços. Consulte o [guia de início rápido](../../README.md#por-onde-começar) para os passos de configuração dos `.env`.
+
+### Execução isolada
+
 Dentro desta pasta:
 
 ```bash

@@ -10,6 +10,18 @@ React 18 · TypeScript · Vite · React Router v6 · TanStack Query v5 · Tailwi
 
 ## Setup
 
+### Forma recomendada — iniciar tudo junto
+
+Para subir backend, telephony-handler e painel de uma vez, use o script na raiz do repositório:
+
+```sh
+./iniciar.sh
+```
+
+O script inicia os três serviços com as variáveis corretas. Não é preciso criar um `.env` manual para o frontend. Consulte o [guia de início rápido](../README.md#por-onde-começar) para os passos de configuração.
+
+### Execução isolada (somente painel)
+
 ```bash
 # dentro de frontend/
 npm install

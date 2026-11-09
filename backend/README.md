@@ -26,7 +26,17 @@ A configuração do banco real e dos serviços externos não é comprovada pela 
 - Analytics aceita slug da matéria ou ID real da campanha, usa `recebida_em` para datas e exclui registros vencidos ou ainda em processamento.
 - As rotas `/internal/conversas` usam `INTERNAL_API_KEY`, que deve ser igual nos dois serviços. Consulte os dois arquivos `.env.example` para as demais variáveis.
 
-### Instalação e verificação
+### Forma recomendada — iniciar tudo junto
+
+Para subir backend, telephony-handler e painel de uma vez, use o script na raiz do repositório:
+
+```sh
+./iniciar.sh
+```
+
+Ele instala dependências, gera o cliente Prisma e exibe os logs dos três serviços. Consulte o [guia de início rápido](../README.md#por-onde-começar) para os passos de configuração dos `.env`.
+
+### Instalação e verificação isolada
 
 ```bash
 npm ci
