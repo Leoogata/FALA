@@ -63,10 +63,30 @@ test('aceita esclarecimento do agente sem resposta pedagógica', async () => {
   post.mockResolvedValue({ results: [{ generated_text: JSON.stringify(result) }] });
   expect(await gerarResposta({ agente: padrao, pergunta: 'Quando ele nasceu?' })).toMatchObject(result);
 });
-test.each([
-  'não é JSON', JSON.stringify({ ...resposta, resposta: 'x'.repeat(1001) }),
-  JSON.stringify({ ...resposta, sem_resposta: true }),
-  JSON.stringify({ ...resposta, precisa_esclarecimento: true }),
-])('rejeita saída inválida: %s', (text) => {
-  expect(() => parseAnswer(text)).toThrow('Resposta inválida');
+// Política de tolerância: parseAnswer NÃO lança para saída malformada —
+// normaliza para um estado coerente (ou cai em sem_resposta) para não
+// derrubar a ligação. Um agente mal comportado nunca deve quebrar o pipeline.
+
+test('texto não-JSON vira sem_resposta em vez de lançar', () => {
+  const r = parseAnswer('não é JSON');
+  expect(r.sem_resposta).toBe(true);
+  expect(r.resposta).toBe('');
+});
+
+test('sem_resposta=true com resposta preenchida é normalizado (resposta vazia)', () => {
+  const r = parseAnswer(JSON.stringify({ ...resposta, sem_resposta: true, resposta: 'texto qualquer' }));
+  expect(r.sem_resposta).toBe(true);
+  expect(r.resposta).toBe('');
+  expect(r.confianca).toBe(0);
+});
+
+test('precisa_esclarecimento sem pergunta é normalizado para false', () => {
+  const r = parseAnswer(JSON.stringify({ ...resposta, precisa_esclarecimento: true, pergunta_esclarecimento: '' }));
+  expect(r.precisa_esclarecimento).toBe(false);
+});
+
+test('resposta válida preenchida é preservada', () => {
+  const r = parseAnswer(JSON.stringify({ resposta: 'As plantas produzem alimento.', confianca: 0.9, sem_resposta: false, precisa_esclarecimento: false, pergunta_esclarecimento: '' }));
+  expect(r.sem_resposta).toBe(false);
+  expect(r.resposta).toBe('As plantas produzem alimento.');
 });
