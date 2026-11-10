@@ -66,4 +66,52 @@ router.get(
   analyticsController.campanhas,
 );
 
+const MateriasQuerySchema = z.object({
+  dias: z.coerce.number().int().min(1).max(7).default(7),
+});
+
+/**
+ * @openapi
+ * /analytics/materias:
+ *   get:
+ *     tags: [Analytics]
+ *     security:
+ *       - schoolToken: []
+ *     summary: Dúvidas por matéria no painel escolar
+ *     description: >
+ *       Retorna a contagem de turnos classificados por matéria para a escola
+ *       autenticada, em uma janela de até 7 dias. Apenas aggregados — sem
+ *       transcrições, respostas, identificadores de alunos ou de chamadas.
+ *       Cache-Control: private, no-store.
+ *     parameters:
+ *       - in: query
+ *         name: dias
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 7
+ *           default: 7
+ *         description: Janela de dias (1–7). Valores fora do intervalo retornam 400.
+ *     responses:
+ *       200:
+ *         description: Aggregados de classificação por matéria
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AnalyticsMaterias'
+ *       400:
+ *         description: Parâmetro inválido (dias fora do intervalo)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *       401:
+ *         description: Credencial de escola ausente ou inválida
+ */
+router.get(
+  '/materias',
+  validate({ query: MateriasQuerySchema }),
+  analyticsController.materias,
+);
+
 export default router;

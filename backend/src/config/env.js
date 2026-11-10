@@ -31,6 +31,12 @@ const schema = z.object({
   WATSONX_EMBEDDING_MODEL: z.string().default('ibm/granite-embedding-278m-multilingual'),
   WATSONX_TIMEOUT_MS: z.coerce.number().int().positive().default(20000),
   VERSAO_PROMPT: z.string().default('agente-unico-v1'),
+  // Habilita classificação local de matérias por NLU (US-10)
+  // Aplicar migration antes de ativar. Desabilitar interrompe novas classificações.
+  NLU_CLASSIFICACAO_HABILITADA: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .default('false'),
   // Chaves administrativas por escola. O código telefônico não é uma senha.
   SCHOOL_API_TOKENS: z.string().default('{}').transform((s, ctx) => {
     try {

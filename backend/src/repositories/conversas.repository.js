@@ -88,7 +88,8 @@ export async function upsertConversa({ chaveChamada, versaoChave, codigoEscola }
  * @param {{ conversaId: string, turnoToken: string, perguntaSanitizada: string|null, textoSuprimido: boolean }} params
  * @returns {Promise<{ id: string, ordem: number, status: string, jaExistia: boolean }>}
  */
-export async function reservarTurno({ conversaId, turnoToken, perguntaSanitizada, textoSuprimido }) {
+export async function reservarTurno({ conversaId, turnoToken, perguntaSanitizada, textoSuprimido,
+  classificacaoStatus, materiaClassificada, classificacaoVersao }) {
   return comRetrySerializacao(async () => {
     const agora = new Date();
     const execucaoId = randomUUID();
@@ -191,6 +192,9 @@ export async function reservarTurno({ conversaId, turnoToken, perguntaSanitizada
           expira_em: expira,
           execucao_id: execucaoId,
           lease_expira_em: leaseExpiraEm,
+          classificacao_status: classificacaoStatus ?? null,
+          materia_classificada: materiaClassificada ?? null,
+          classificacao_versao: classificacaoVersao ?? null,
         },
         select: { id: true, ordem: true, status: true },
       });

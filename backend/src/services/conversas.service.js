@@ -7,11 +7,14 @@ import {
   encerrarConversa,
 } from '../repositories/conversas.repository.js';
 import { sanitizar } from '../utils/sanitizacao.js';
+import { classificar } from '../nlu/classificador.js';
+import { env } from '../config/env.js';
 
 export { upsertConversa, buscarContexto, encerrarConversa };
 
 /**
  * Reserva um turno re-sanitizando a pergunta antes de persistir.
+ * Depois da sanitização, classifica a matéria com NLU local (se habilitado).
  * Defesa em profundidade: garante que dados pessoais não cheguem ao banco mesmo
  * se o telephony-handler não tiver sanitizado corretamente.
  */
@@ -30,11 +33,27 @@ export async function reservarTurno({ conversaId, turnoToken, perguntaSanitizada
     }
   }
 
+  // Classificar após sanitização, antes da reserva no banco.
+  // Turnos suprimidos, vazios ou com recurso desativado ficam com null.
+  let classificacaoStatus = null;
+  let materiaClassificada = null;
+  let classificacaoVersao = null;
+
+  if (env.NLU_CLASSIFICACAO_HABILITADA && perguntaFinal && !suprimidoFinal) {
+    const resultado = classificar(perguntaFinal);
+    classificacaoStatus = resultado.status;
+    materiaClassificada = resultado.materia;
+    classificacaoVersao = resultado.versao;
+  }
+
   return _reservarTurno({
     conversaId,
     turnoToken,
     perguntaSanitizada: perguntaFinal,
     textoSuprimido: suprimidoFinal,
+    classificacaoStatus,
+    materiaClassificada,
+    classificacaoVersao,
   });
 }
 

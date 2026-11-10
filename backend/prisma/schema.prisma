@@ -45,6 +45,12 @@ enum Materia {
   ciencias
 }
 
+enum ClassificacaoStatus {
+  classificada
+  indeterminada
+  erro
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────────────────────────────────────
@@ -171,6 +177,9 @@ model Interacao {
   recebida_em                  DateTime        @default(now()) @map("recebida_em") @db.Timestamptz
   concluida_em                 DateTime?       @map("concluida_em") @db.Timestamptz
   expira_em                    DateTime        @map("expira_em") @db.Timestamptz
+  classificacao_status         ClassificacaoStatus? @map("classificacao_status")
+  materia_classificada         Materia?        @map("materia_classificada")
+  classificacao_versao         String?         @map("classificacao_versao")
 
   conversa Conversa  @relation(fields: [conversa_id], references: [id], onDelete: Cascade)
   campanha Campanha? @relation(fields: [campanha_id], references: [id], onDelete: SetNull)

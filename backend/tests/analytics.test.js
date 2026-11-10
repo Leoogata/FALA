@@ -15,6 +15,7 @@ const mockRepo = {
 
 jest.unstable_mockModule('../src/repositories/analytics.repository.js', () => ({
   analyticsRepository: mockRepo,
+  materiasPorEscola: jest.fn(),
 }));
 
 const { analyticsService } = await import('../src/services/analytics.service.js');

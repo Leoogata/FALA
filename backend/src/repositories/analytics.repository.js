@@ -61,3 +61,63 @@ export const analyticsRepository = {
     `;
   },
 };
+
+/**
+ * Contagem de interações classificadas por matéria para uma escola,
+ * em uma janela de tempo definida por início e fim em UTC.
+ *
+ * Retorna somente aggregados — sem transcrições, identificadores de aluno
+ * ou identificadores de chamadas. Cache-Control aplicado no controller.
+ *
+ * @param {string} escolaId
+ * @param {Date} inicio
+ * @param {Date} fim
+ * @returns {Promise<{
+ *   total: number,
+ *   classificadas: number,
+ *   indeterminadas: number,
+ *   falhasClassificacao: number,
+ *   materias: Array<{ materia: string, total: number }>
+ * }>}
+ */
+export async function materiasPorEscola(escolaId, inicio, fim) {
+  // Turnos elegíveis: classificacao_status preenchido, dentro da janela e não vencidos
+  const [totais, porcMateria] = await Promise.all([
+    prisma.$queryRaw`
+      SELECT
+        COUNT(*)::int AS "total",
+        SUM(CASE WHEN i.classificacao_status = 'classificada'    THEN 1 ELSE 0 END)::int AS "classificadas",
+        SUM(CASE WHEN i.classificacao_status = 'indeterminada'   THEN 1 ELSE 0 END)::int AS "indeterminadas",
+        SUM(CASE WHEN i.classificacao_status = 'erro'            THEN 1 ELSE 0 END)::int AS "falhasClassificacao"
+      FROM interacoes i
+      JOIN conversas c ON c.id = i.conversa_id
+      WHERE c.escola_id = ${escolaId}
+        AND i.classificacao_status IS NOT NULL
+        AND i.recebida_em >= ${inicio}
+        AND i.recebida_em <  ${fim}
+        AND i.expira_em   >  ${fim}
+    `,
+    prisma.$queryRaw`
+      SELECT
+        i.materia_classificada::text AS "materia",
+        COUNT(*)::int                AS "total"
+      FROM interacoes i
+      JOIN conversas c ON c.id = i.conversa_id
+      WHERE c.escola_id = ${escolaId}
+        AND i.classificacao_status = 'classificada'
+        AND i.materia_classificada IS NOT NULL
+        AND i.recebida_em >= ${inicio}
+        AND i.recebida_em <  ${fim}
+        AND i.expira_em   >  ${fim}
+      GROUP BY i.materia_classificada
+    `,
+  ]);
+
+  return {
+    total: totais[0]?.total ?? 0,
+    classificadas: totais[0]?.classificadas ?? 0,
+    indeterminadas: totais[0]?.indeterminadas ?? 0,
+    falhasClassificacao: totais[0]?.falhasClassificacao ?? 0,
+    materias: porcMateria,
+  };
+}
