@@ -18,12 +18,13 @@ export function Sidebar() {
   const ESCOLA = escolaAtual();
   const location = useLocation();
   const agentesActive = location.pathname.startsWith('/agentes');
+  const metricasActive = location.pathname.startsWith('/metricas');
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-[248px] min-h-screen bg-[var(--navy)] text-white fixed left-0 top-0 bottom-0 z-30">
-        <SidebarContent agentesActive={agentesActive} />
+        <SidebarContent agentesActive={agentesActive} metricasActive={metricasActive} />
       </aside>
 
       {/* Mobile top bar */}
@@ -43,12 +44,12 @@ export function Sidebar() {
             >
               Agentes
             </NavLink>
-            <span
-              className="px-3 py-1.5 rounded-lg text-sm opacity-45 cursor-not-allowed"
-              title="Disponível em uma próxima versão"
+            <NavLink
+              to="/metricas"
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${metricasActive ? 'bg-white/20' : 'hover:bg-white/10'}`}
             >
               Métricas
-            </span>
+            </NavLink>
           </nav>
         </div>
         <div className="px-4 pb-3 text-xs border-t border-white/10 pt-2 flex items-center gap-3 flex-wrap">
@@ -70,7 +71,7 @@ export function Sidebar() {
   );
 }
 
-function SidebarContent({ agentesActive }: { agentesActive: boolean }) {
+function SidebarContent({ agentesActive, metricasActive }: { agentesActive: boolean; metricasActive: boolean }) {
   const ESCOLA = escolaAtual();
   return (
     <div className="flex flex-col h-full">
@@ -93,16 +94,12 @@ function SidebarContent({ agentesActive }: { agentesActive: boolean }) {
         >
           Agentes
         </NavLink>
-        <div
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm opacity-45 cursor-not-allowed select-none"
-          title="Disponível em uma próxima versão"
-          aria-disabled="true"
+        <NavLink
+          to="/metricas"
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${metricasActive ? 'bg-white/20' : 'hover:bg-white/10 opacity-80'}`}
         >
           Métricas
-          <span className="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--draft-bg)] text-[var(--draft)]">
-            em breve
-          </span>
-        </div>
+        </NavLink>
       </nav>
 
       {import.meta.env.VITE_USE_MOCK !== 'true' && <button onClick={clearSchool} className="mx-4 mt-5 text-left text-sm underline">Sair da escola</button>}

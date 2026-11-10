@@ -71,6 +71,26 @@ export function calcularStatus(agente: AgenteResumo | AgenteDetalhe): StatusAgen
   return 'inativo';
 }
 
+export interface MateriasItem {
+  materia: 'ciencias' | 'historia' | 'matematica' | 'portugues' | 'geografia';
+  total: number;
+  percentual: number;
+}
+
+export interface AnalyticsMaterias {
+  periodo: {
+    dias: number;
+    inicio: string;
+    fim: string;
+  };
+  total: number;
+  classificadas: number;
+  indeterminadas: number;
+  falhasClassificacao: number;
+  coberturaPercentual: number;
+  materias: MateriasItem[];
+}
+
 // Classe de erro tipada
 export class ApiError extends Error {
   constructor(

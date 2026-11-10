@@ -5,6 +5,7 @@ import type {
   RespostaMelhorar,
   RespostaTestar,
   RespostaRemoverMaterial,
+  AnalyticsMaterias,
 } from '../api/types';
 import { ApiError } from '../api/types';
 import { agentes, calcDocs, processingDocId } from './data';
@@ -298,5 +299,31 @@ export async function mockTestarAgente(
     resposta: `Com base nos materiais de ${ag.nome}, posso dizer que este é um tema importante do conteúdo. Recomendo revisar os arquivos enviados pelo professor para entender melhor.`,
     confianca: 0.84,
     sem_resposta: false,
+  };
+}
+
+export async function mockMateriasPorEscola(dias: 1 | 7 = 7): Promise<AnalyticsMaterias> {
+  await delay();
+  const fim = new Date();
+  const inicio = new Date(fim.getTime() - dias * 24 * 60 * 60 * 1000);
+
+  const total = 100;
+  const classificadas = 85;
+  const materias: AnalyticsMaterias['materias'] = [
+    { materia: 'matematica', total: 32, percentual: 32 },
+    { materia: 'ciencias',   total: 20, percentual: 20 },
+    { materia: 'portugues',  total: 15, percentual: 15 },
+    { materia: 'historia',   total: 11, percentual: 11 },
+    { materia: 'geografia',  total:  7, percentual:  7 },
+  ];
+
+  return {
+    periodo: { dias, inicio: inicio.toISOString(), fim: fim.toISOString() },
+    total,
+    classificadas,
+    indeterminadas: 13,
+    falhasClassificacao: 2,
+    coberturaPercentual: 85,
+    materias,
   };
 }

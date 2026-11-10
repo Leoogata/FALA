@@ -10,6 +10,7 @@ import { AbaInstrucoesPage } from './pages/AbaInstrucoesPage';
 import { AbaTestarPage } from './pages/AbaTestarPage';
 import { AbaLigacaoPage } from './pages/AbaLigacaoPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { MetricasPage } from './pages/MetricasPage';
 import { SchoolGate } from './components/layout/SchoolGate';
 
 const queryClient = new QueryClient({
@@ -36,6 +37,7 @@ const router = createRouter([
       { path: 'ligacao', element: <AbaLigacaoPage /> },
     ],
   },
+  { path: '/metricas', element: <MetricasPage /> },
   { path: '*', element: <NotFoundPage /> },
 ]);
 
